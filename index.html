@@ -723,7 +723,7 @@ function renderWho(message) {
     (message ? `<p class="msg ok">${esc(message)}</p>` : '');
   if (!cloudReady) {
     box.innerHTML = `<div class="who-card">${top}<p class="hint">${L('Loading teachers…', '선생님 목록을 불러오는 중…')}</p>
-      <p class="copyright">© 2026 Joseph McLaren. All rights reserved.</p></div>`;
+      <p class="copyright">Made by Joseph McLaren</p></div>`;
     return;
   }
   const list = profiles.length
@@ -745,7 +745,7 @@ function renderWho(message) {
         '선생님마다 반 목록이 온라인에 저장되어 어느 컴퓨터에서든 이 페이지를 열어 이어서 쓸 수 있습니다. 다 쓰면 위의 바꾸기를 누르세요. 30분 동안 사용하지 않아도 자동으로 로그아웃됩니다.')
       : L("Each teacher's classes are saved separately on this computer. Click Switch at the top when you're done. You're also signed out after 30 minutes without use.",
         '선생님마다 반 목록이 이 컴퓨터에 따로 저장됩니다. 다 쓰면 위의 바꾸기를 누르세요. 30분 동안 사용하지 않아도 자동으로 로그아웃됩니다.')}</p>
-    <p class="copyright">© 2026 Joseph McLaren. All rights reserved.</p></div>`;
+    <p class="copyright">Made by Joseph McLaren</p></div>`;
   if (!profiles.length) document.getElementById('new-name').focus();
 }
 const whoErr = t => { const e = document.getElementById('who-err'); if (e) e.textContent = t; };
