@@ -204,7 +204,6 @@
   .style-topia .school { font-family: "Times New Roman", Times, serif; font-weight: 700; font-size: 12.5pt; color: #7E1B17; letter-spacing: .01em; }
   .style-topia .teacher { font-size: 8.5pt; color: #555; }
   .style-topia .name { flex: 52; color: #1B2238; font-family: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", Arial, sans-serif; font-weight: 800; }
-  .style-topia .name .kor { color: #7E1B17; }
   .style-topia .name .sep { color: #c9a9a6; opacity: 1; }
   .style-topia .mid { flex: 20; color: #1B2238; font-weight: 600; padding-left: 6mm; }
   .tag.blank-slot::after { display: none !important; }
@@ -354,6 +353,7 @@
       <label for="namemode" data-i18n="namemodeLbl">Names on the tag</label>
       <select id="namemode">
         <option value="both" data-i18n="both">English | Korean</option>
+        <option value="korfirst" data-i18n="korEng">Korean | English</option>
         <option value="eng" data-i18n="engOnly">English only</option>
         <option value="kor" data-i18n="korOnly">Korean only</option>
       </select>
@@ -449,7 +449,7 @@ const KO = {
   d1: '1. 기본 정보',
   teacherLbl: '내 이름 (이름표 오른쪽 아래)', teacherPh: '예: Eugene',
   schoolLbl: '학원 이름 (왼쪽 아래)',
-  namemodeLbl: '이름표에 넣을 이름', both: '영어 | 한국어', engOnly: '영어만', korOnly: '한국어만',
+  namemodeLbl: '이름표에 넣을 이름', both: '영어 | 한국어', korEng: '한국어 | 영어', engOnly: '영어만', korOnly: '한국어만',
   newpage: '반마다 새 페이지에서 시작',
   styleH: '이름표 스타일', classic: '클래식', modern: '모던', cute: '귀여운',
   wm: '다람쥐 워터마크', crop: '재단선 (재단 표시 + 여백에 반 이름)',
@@ -466,7 +466,7 @@ const KO = {
   li1: '<b>처음 한 번만:</b> 북마크바를 표시하고(Ctrl+Shift+B) 이 버튼을 북마크바로 끌어다 놓으세요:',
   bm: '학생 복사', bmTitle: '북마크바로 끌어다 놓으세요',
   li2: 'TOPIA <b>출석</b> 페이지(그날의 반 목록)에서 북마크바의 <b>학생 복사</b>를 누르세요. 반마다 명단을 차례로 열고 취소로 다시 닫습니다. 저장은 절대 누르지 않습니다.',
-  li3: '다 끝나면 빨간 상자의 <b>Copy for name tags</b>를 누르세요.',
+  li3: '다 끝나면 빨간 상자의 <b>Copy for name tags · 이름표용 복사</b>를 누르세요.',
   li4: '이 페이지로 돌아와 위의 붙여 넣기 칸을 누르고 <b>Ctrl+V</b>를 누르세요. 모든 반과 학생이 요일까지 채워져 한 번에 들어옵니다.',
   li5: '다른 요일에 수업하는 반이 있나요? TOPIA 페이지에서 날짜를 바꾸고 다시 하세요. 새 반이 추가되고 <i>Mon / Wed</i> 같은 요일이 자동으로 쌓입니다.',
   d3: '3. 반별 확인',
@@ -1083,6 +1083,8 @@ function copyStudentsBookmarklet() {
   box.style.cssText = 'position:fixed;top:16px;right:16px;z-index:2147483647;background:#7A1701;color:#FBEDC5;font:15px Arial,sans-serif;padding:14px 18px;border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,.35);max-width:360px;max-height:80vh;overflow:auto;line-height:1.4';
   D.body.appendChild(box);
   var say = function (h) { box.innerHTML = h; };
+  // Each message is in English, then Korean underneath.
+  var ko = function (h) { return '<div style="font-size:13px;opacity:.85;margin-top:3px">' + h + '</div>'; };
   var base = rowsNow();
   base.forEach(function (r) { out.push(cellsOf(r)); });
   var buttons = [];
@@ -1090,7 +1092,7 @@ function copyStudentsBookmarklet() {
     var b = r.querySelector('button');
     if (b && /attendance|출석/i.test(txt(b))) buttons.push({ btn: b, name: txt(r.children[0]) });
   });
-  if (!buttons.length) { say('No Attendance buttons found. Open the Attendance page with your class list first.'); setTimeout(function () { box.remove(); }, 5000); return; }
+  if (!buttons.length) { say('No Attendance buttons found. Open the Attendance page with your class list first.' + ko('출석 버튼을 찾지 못했습니다. 먼저 반 목록이 있는 출석 페이지를 여세요.')); setTimeout(function () { box.remove(); }, 5000); return; }
   var closePopup = async function () {
     var closers = Array.prototype.filter.call(D.querySelectorAll('button, a'), function (el) {
       var w = txt(el);
@@ -1101,10 +1103,10 @@ function copyStudentsBookmarklet() {
     for (var u = 0; u < 40; u++) { await sleep(150); if (!freshRows().length && !popupInfo().name) break; }
     await sleep(400);
   };
-  var readClass = async function (item, label) {
+  var readClass = async function (item, label, labelKo) {
     var best = null;
     for (var attempt = 1; attempt <= 3; attempt++) {
-      say(label + (attempt > 1 ? ' (try ' + attempt + ')' : '') + '&hellip;');
+      say(label + (attempt > 1 ? ' (try ' + attempt + ')' : '') + '&hellip;' + ko(labelKo + (attempt > 1 ? ' (' + attempt + '번째 시도)' : '') + '&hellip;'));
       item.btn.click();
       var seen = [], keys = {}, started = Date.now(), changed = Date.now(), info = { count: null };
       while (Date.now() - started < 15000) {
@@ -1136,7 +1138,8 @@ function copyStudentsBookmarklet() {
   (async function () {
     var report = [], total = 0, short = 0;
     for (var i = 0; i < buttons.length; i++) {
-      var r = await readClass(buttons[i], 'Reading class ' + (i + 1) + ' of ' + buttons.length + ': <b>' + buttons[i].name + '</b>');
+      var r = await readClass(buttons[i], 'Reading class ' + (i + 1) + ' of ' + buttons.length + ': <b>' + buttons[i].name + '</b>',
+        '반 읽는 중 (' + (i + 1) + '/' + buttons.length + '): <b>' + buttons[i].name + '</b>');
       out.push('▶ ' + buttons[i].name);
       r.lines.forEach(function (l) { out.push(l); });
       total += r.students;
@@ -1145,21 +1148,23 @@ function copyStudentsBookmarklet() {
       report.push((full ? '&#10003; ' : '&#9888; ') + buttons[i].name + ': ' + r.students + (r.count !== null ? ' of ' + r.count : '') + ' students');
     }
     var text = out.join('\n');
-    say((short ? '<b>' + short + ' class' + (short > 1 ? 'es are' : ' is') + ' missing students.</b> Close this and click Copy students again, or add them by hand.<br>' : 'Read <b>' + buttons.length + '</b> classes and <b>' + total + '</b> students.<br>') +
+    say((short ? '<b>' + short + ' class' + (short > 1 ? 'es are' : ' is') + ' missing students.</b> Close this and click Copy students again, or add them by hand.' +
+        ko('<b>' + short + '개 반에 빠진 학생이 있습니다.</b> 이 창을 닫고 학생 복사를 다시 누르거나 직접 추가하세요.')
+      : 'Read <b>' + buttons.length + '</b> classes and <b>' + total + '</b> students.' + ko('반 <b>' + buttons.length + '</b>개, 학생 <b>' + total + '</b>명을 읽었습니다.')) +
       '<div style="font-size:12.5px;margin:6px 0 2px;opacity:.9">' + report.join('<br>') + '</div>' +
-      '<button id="ntg-copy" style="margin-top:10px;padding:8px 14px;border:0;border-radius:6px;background:#FBEDC5;color:#7A1701;font-weight:bold;cursor:pointer">Copy for name tags</button> ' +
-      '<button id="ntg-x" style="margin-top:10px;padding:8px 10px;border:0;border-radius:6px;background:transparent;color:#FBEDC5;cursor:pointer">Close</button>' +
+      '<button id="ntg-copy" style="margin-top:10px;padding:8px 14px;border:0;border-radius:6px;background:#FBEDC5;color:#7A1701;font-weight:bold;cursor:pointer">Copy for name tags · 이름표용 복사</button> ' +
+      '<button id="ntg-x" style="margin-top:10px;padding:8px 10px;border:0;border-radius:6px;background:transparent;color:#FBEDC5;cursor:pointer">Close · 닫기</button>' +
       '<div style="font-size:10.5px;margin-top:8px;opacity:.55">Name Tag Generator by Joseph McLaren</div>');
     D.getElementById('ntg-x').onclick = function () { box.remove(); };
     D.getElementById('ntg-copy').onclick = function () {
-      var ok = function () { say('Copied. Go to the name tag tool, click the paste box and press <b>Ctrl+V</b>.'); setTimeout(function () { box.remove(); }, 6000); };
+      var ok = function () { say('Copied. Go to the name tag tool, click the paste box and press <b>Ctrl+V</b>.' + ko('복사했습니다. 이름표 도구로 가서 붙여 넣기 칸을 누르고 <b>Ctrl+V</b>를 누르세요.')); setTimeout(function () { box.remove(); }, 6000); };
       var fallback = function () {
         var ta = D.createElement('textarea');
         ta.value = text; ta.style.cssText = 'position:fixed;left:-9999px;top:0;user-select:text';
         D.body.appendChild(ta); ta.select();
         var done = false; try { done = D.execCommand('copy'); } catch (e) {}
         ta.remove();
-        if (done) ok(); else say('Copying was blocked by the browser. Please try the button again.');
+        if (done) ok(); else say('Copying was blocked by the browser. Please try the button again.' + ko('브라우저가 복사를 막았습니다. 버튼을 다시 눌러 주세요.'));
       };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(ok, fallback); else fallback();
     };
@@ -1550,8 +1555,10 @@ function nameHTML(raw) {
   let e = eng, k = kor;
   if (state.nameMode === 'eng') { k = e ? '' : k; }
   if (state.nameMode === 'kor') { e = k ? '' : e; }
-  const text = e && k ? `${e} | ${k}` : (e || k);
-  const html = e && k ? `<span>${esc(e)}</span><span class="sep">|</span><span class="kor">${esc(k)}</span>`
+  const korFirst = state.nameMode === 'korfirst';
+  const text = e && k ? (korFirst ? `${k} | ${e}` : `${e} | ${k}`) : (e || k);
+  const html = e && k ? (korFirst ? `<span class="kor">${esc(k)}</span><span class="sep">|</span><span>${esc(e)}</span>`
+                                  : `<span>${esc(e)}</span><span class="sep">|</span><span class="kor">${esc(k)}</span>`)
                       : (k ? `<span class="kor">${esc(k)}</span>` : esc(e));
   return { text, html };
 }
@@ -1606,7 +1613,7 @@ function render() {
     const tags = pg.tags;
     while (tags.length < PER) tags.push('<div class="tag blank-slot"></div>');
     const label = `${[...pg.names].join(', ')}  ·  ${L(`page ${i + 1} of ${chunks.length}`, `${i + 1} / ${chunks.length}쪽`)}`;
-    return `<div class="page style-${esc(state.style)}${state.watermark ? '' : ' no-wm'}">${state.cropmarks ? cropMarks(label) : ''}<div class="grid">${tags.join('')}</div></div>`;
+    return `<div class="page style-${esc(state.style)}${state.watermark ? '' : ' no-wm'}">${state.cropmarks ? cropMarks(label) : ''}${creditMark()}<div class="grid">${tags.join('')}</div></div>`;
   }).join('');
   fitNames();
   const pages = chunks.length;
@@ -1671,8 +1678,13 @@ function cropMarks(label) {
   for (let k = 0; k <= cols; k++) { const x = x0 + k * CW; d += `M${x} 0V${y0 - gap}M${x} ${H - y0 + gap}V${H}`; }
   for (let k = 0; k <= rows; k++) { const y = y0 + k * RH; d += `M0 ${y}H${x0 - gap}M${W - x0 + gap} ${y}H${W}`; }
   return `<svg class="crop" viewBox="0 0 ${W} ${H}" aria-hidden="true"><path d="${d}" stroke="#000" stroke-width=".25" fill="none"/>` +
-    `<text x="${x0 + 2}" y="${H - y0 / 2 + 1}" font-size="2.6" font-family="Arial, sans-serif" fill="#555">${esc(label)}</text>` +
-    `<text x="${W - x0 - 2}" y="${H - y0 / 2 + 1}" font-size="2" font-family="Arial, sans-serif" fill="#999" text-anchor="end">Name tags by Joseph McLaren</text></svg>`;
+    `<text x="${x0 + 2}" y="${H - y0 / 2 + 1}" font-size="2.6" font-family="Arial, sans-serif" fill="#555">${esc(label)}</text></svg>`;
+}
+// The creator's credit, printed in the bottom margin of every page whether or not the cutting guides are on.
+function creditMark() {
+  const { cols, rows, cw: CW, rh: RH } = layout();
+  const W = 297, H = 210, x0 = (W - cols * CW) / 2, y0 = (H - rows * RH) / 2;
+  return `<svg class="crop" viewBox="0 0 ${W} ${H}" aria-hidden="true"><text x="${W - x0 - 2}" y="${H - y0 / 2 + 1}" font-size="2" font-family="Arial, sans-serif" fill="#999" text-anchor="end">Name tags by Joseph McLaren</text></svg>`;
 }
 
 /* Printing. As a plain file the tool opens the print dialog itself. Online (on claude.ai) a page
