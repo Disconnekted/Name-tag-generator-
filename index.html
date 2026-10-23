@@ -97,12 +97,20 @@
   .picklist label input { margin: 0; }
   .picklist select { width: auto; padding: 0 2px; font-size: 12px; margin-left: auto; }
   .picklist .none { font-size: 12.5px; color: var(--muted); }
-  #testpage { display: none; }
   .dayhead { display: flex; align-items: flex-end; gap: 4px; }
   .dayhead label { flex: 1; }
   .dayhead .daychip { font-size: 11px; padding: 1px 6px; margin-bottom: 3px; white-space: nowrap; }
   .newbar { margin-top: 8px; padding: 6px 8px; border-radius: 6px; background: #e8f1fd; border: 1px solid #bcd5f7; font-size: 12.5px; color: #1d3f73; line-height: 1.45; }
   .newbar .nb-btns { display: inline-flex; gap: 6px; margin-left: 4px; }
+  .daychip.on { background: var(--maroon) !important; color: var(--cream) !important; border-color: var(--maroon) !important; }
+  .subdot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-left: 5px; vertical-align: -1px; }
+  #legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); margin: 2px 0 8px; }
+  #legend span { display: inline-flex; align-items: center; gap: 4px; }
+  #legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .rombar { margin-top: 8px; padding: 7px 9px; border-radius: 6px; background: #fff6dc; border: 1px solid #f0d58a; font-size: 12.5px; color: #5a3a00; line-height: 1.45; }
+  .rombar .rom-list { display: grid; grid-template-columns: auto 1fr; gap: 4px 8px; align-items: center; margin: 6px 0; }
+  .rombar .rom-list input { padding: 3px 6px; font-size: 13px; }
+  .rombar .nb-btns { display: flex; gap: 6px; flex-wrap: wrap; }
   .newtag { font-size: 10px; font-weight: bold; color: #fff; background: #2b7de9; border-radius: 3px; padding: 0 4px; }
   .tag .newmark { position: absolute; top: .8mm; left: .8mm; z-index: 2; background: #2b7de9; color: #fff; font: bold 5.5pt/1.3 Arial, sans-serif; padding: 0 1.1mm; border-radius: .8mm; }
   .page { color: #222; }
@@ -132,6 +140,7 @@
   html.dark .style-pick label:has(input:checked), html.dark .print-mode label:has(input:checked) { background: #3b2922; border-color: #c4664c; color: #f2b8a6; }
   html.dark .style-pick input:checked + span { color: #f2b8a6; }
   html.dark .picklist { background: #2c2720; border-color: #4b3f2d; }
+  html.dark .rombar { background: #3a3120; border-color: #6b5626; color: #f3dfae; }
   html.dark .newbar { background: #1c2a40; border-color: #2f4a73; color: #bcd5f7; }
   html.dark .msg.ok { background: #1e3321; color: #a9dba9; }
   html.dark .msg.err { background: #3b1f1f; color: #f3a9a9; }
@@ -199,6 +208,14 @@
   .style-topia .name .sep { color: #c9a9a6; opacity: 1; }
   .style-topia .mid { flex: 20; color: #1B2238; font-weight: 600; padding-left: 6mm; }
   .tag.blank-slot::after { display: none !important; }
+  /* class colour */
+  .style-classic .tag.cc .mid { background: var(--cc-bg); color: var(--cc-fg); }
+  .style-modern .tag.cc { border-left-color: var(--cc-strong); }
+  .style-modern .tag.cc .mid { color: var(--cc-strong); }
+  .style-cute .tag.cc { background: var(--cc-strong); }
+  .style-cute .tag.cc .mid span { color: var(--cc-fg); }
+  .style-topia .tag.cc .foot { border-bottom-color: var(--cc-strong); }
+  .style-topia .tag.cc .mid { color: var(--cc-strong); }
 
   /* Squirrel watermark */
   .tag { position: relative; }
@@ -235,12 +252,14 @@
   .who-card p.hint { font-size: 12.5px; color: var(--muted); line-height: 1.45; margin: 16px 0 0; }
   .who-err { color: #a00; font-size: 13px; min-height: 1em; margin: 6px 0 0; }
   .who-card .msg { display: block; margin: 12px 0 0; }
-  #who-btn { font-size: 13px; background: transparent; color: var(--cream); border-color: rgba(251,237,197,.45); }
-  #who-btn:hover { background: rgba(255,255,255,.12); }
+  #who-btn, #undo-btn { font-size: 13px; background: transparent; color: var(--cream); border-color: rgba(251,237,197,.45); }
+  #who-btn:hover, #undo-btn:hover:not(:disabled) { background: rgba(255,255,255,.12); }
+  #undo-btn:disabled { opacity: .4; }
+  #undo-btn:disabled:hover { background: transparent; }
   html.dark .who-card h3 { color: #c9c5bc; }
   html.dark .who-form button.primary, html.dark #notice button.primary { background: var(--cream); color: var(--maroon); border-color: var(--cream); }
   html.dark .who-err { color: #ff8a80; }
-  html.dark #who-btn { background: transparent; color: var(--cream); }
+  html.dark #who-btn, html.dark #undo-btn { background: transparent; color: var(--cream); }
   #notice { position: fixed; z-index: 8600; left: 50%; bottom: 24px; transform: translateX(-50%); width: min(440px, calc(100vw - 32px));
     background: #fff; color: #222; border-radius: 12px; padding: 14px 16px; box-shadow: 0 10px 30px rgba(0,0,0,.3); border-top: 4px solid var(--maroon); font-size: 14px; line-height: 1.45; }
   #notice p { margin: 0; }
@@ -278,9 +297,6 @@
     @page { size: A4 landscape; margin: 0; }
     body { background: #fff; }
     header, .controls, .summary, .noprint { display: none !important; }
-    body.testprint #preview-area { display: none !important; }
-    body.testprint #testpage { display: block; width: 297mm; height: 210mm; }
-    body.testprint #testpage svg { display: block; width: 297mm; height: 210mm; }
     .wrap { display: block; padding: 0; }
     #preview-area { position: static; max-height: none; overflow: visible; padding: 0; }
     .tag.active { box-shadow: none; }
@@ -323,7 +339,6 @@
   <button id="theme" class="icon" onclick="toggleTheme()" title="Dark mode" aria-label="Dark mode"></button>
   <button id="who-btn" onclick="signOut()" hidden></button>
   <button id="undo-btn" onclick="undo()" disabled data-i18n="undo" data-i18n-title="undoTitle" title="Undo the last change (Ctrl+Z)">↶ Undo</button>
-  <button id="printcheck-btn" onclick="printTestPage()" data-i18n="printcheck" data-i18n-title="printcheckTitle" title="Print one page to check your printer isn't shrinking the tags">Printer check</button>
   <button id="print-btn" class="primary" onclick="printOut()" data-i18n="print">Print tags</button>
 </header>
 
@@ -401,19 +416,19 @@
       <p class="hint" data-i18n="hint3">Pick the subject and days, fix any names, and untick classes you don't need. Use ×2 or ×3 next to a class to print extra copies of each tag. Names are written as <i>English | Korean</i>; either half can be left out. Type a dash (-) on its own line for a blank tag you can write on.</p>
       <datalist id="subjects">
         <option>Debate</option><option>Grammar</option><option>Integrated</option><option>Language Arts</option>
-        <option>Phonics</option><option>Speaking</option><option>Writing</option><option>Listening</option>
-        <option>TOEFL</option><option>Intensives</option>
+        <option>Phonics</option><option>Speaking</option><option>Writing</option>
+        <option>TOEFL Reading</option>
       </datalist>
       <datalist id="dayslist">
         <option>Mon / Wed</option><option>Tues / Thurs</option>
       </datalist>
+      <div id="legend"></div>
       <div id="classbar" hidden></div>
       <div id="classes"></div>
     </div>
     <p class="copyright">Made by Joseph McLaren<br><span>Includes SheetJS (Apache License 2.0).</span></p>
   </div>
 
-  <div id="testpage"></div>
   <div id="preview-area">
     <p class="summary" id="summary"></p>
     <div id="pages"></div>
@@ -430,7 +445,6 @@ let nextId = 1;
 const KO = {
   title: '이름표 만들기', helpTitle: '사용법 안내',
   privacy: '🔒 공용 컴퓨터: 반 목록은 내 이름으로 저장됩니다. 다 쓰면 위의 <b>바꾸기</b>를 누르세요. 30분 동안 사용하지 않아도 자동으로 로그아웃됩니다.',
-  printcheck: '프린터 확인', printcheckTitle: '프린터가 이름표를 줄여서 인쇄하지 않는지 한 장으로 확인합니다',
   print: '이름표 인쇄', undo: '↶ 되돌리기', undoTitle: '마지막 변경 되돌리기 (Ctrl+Z)',
   d1: '1. 기본 정보',
   teacherLbl: '내 이름 (이름표 오른쪽 아래)', teacherPh: '예: Eugene',
@@ -629,7 +643,7 @@ function openProfile(id) {
   if (cloud && cloudDocs[id]) lastWritten[id] = JSON.stringify(cloudDocs[id].state);
   state = Object.assign(freshState(), d, { lang: state.lang, theme: state.theme });
   if (!Array.isArray(state.classes)) state.classes = [];
-  nextId = 1; state.classes.forEach(c => { c.id = nextId++; });
+  nextId = 1; state.classes.forEach(c => { c.id = nextId++; c.days = pairDays(c.days); });
   currentId = id; lastActive = Date.now(); activeId = null; resetUndo();
   hideWho(); hideNotice(); syncUI(); save(); setSync(syncState === 'readonly' ? 'readonly' : 'ok');
   if (!state.toured && !state.classes.length) setTimeout(tourStart, 400); // a teacher's first visit
@@ -841,6 +855,66 @@ function showMsg(text, ok) {
 
 function newClass(name) {
   return { id: nextId++, name: name || '', subject: '', days: '', teacher: '', include: true, copies: 1, names: [] };
+}
+
+/* ---------- class colours ----------
+   The subject decides the colour (the class line, side bar or frame, depending on the style), so a
+   book's subject shows at a glance. Subjects not listed here keep the style's own colours. */
+const COLORS = {
+  'debate':        { bg: '#F6CFCB', fg: '#7A1510', strong: '#C62828', en: 'Red',    ko: '빨강' },
+  'grammar':       { bg: '#F9E79F', fg: '#5E4700', strong: '#E0B100', en: 'Yellow', ko: '노랑' },
+  'phonics':       { bg: '#F7BE85', fg: '#5A2A05', strong: '#E07A2E', en: 'Orange', ko: '주황' },
+  'speaking':      { bg: '#CFE0F5', fg: '#1F3A68', strong: '#2F6DB5', en: 'Blue',   ko: '파랑' },
+  'writing':       { bg: '#D5ECC8', fg: '#1E5B2A', strong: '#3B8C3A', en: 'Green',  ko: '초록' },
+  'integrated':    { bg: '#E3D6F2', fg: '#4B2A78', strong: '#7B52AB', en: 'Purple', ko: '보라' },
+  'language arts': { bg: '#C9EBE7', fg: '#145650', strong: '#23978C', en: 'Teal',   ko: '청록' },
+  'toefl':         { bg: '#D3D8E8', fg: '#1B2550', strong: '#34407A', en: 'Navy',   ko: '남색' },
+};
+const SUBJECT_NAMES = { 'debate': 'Debate', 'grammar': 'Grammar', 'phonics': 'Phonics', 'speaking': 'Speaking', 'writing': 'Writing',
+  'integrated': 'Integrated', 'language arts': 'Language Arts', 'toefl': 'TOEFL Reading' };
+const classColor = c => { const sub = clean(c.subject || '').toLowerCase(); const k = Object.keys(COLORS).find(k => sub.includes(k)); return k ? COLORS[k] : null; };
+const subDot = c => { const cc = classColor(c); return cc ? `<i class="subdot" style="background:${cc.strong}" title="${L(cc.en, cc.ko)}"></i>` : ''; };
+function renderLegend() {
+  document.getElementById('legend').innerHTML = L('Colours:', '과목별 색:') + ' ' +
+    Object.keys(COLORS).map(k => `<span><i style="background:${COLORS[k].strong}"></i>${SUBJECT_NAMES[k]}</span>`).join('');
+}
+
+/* ---------- English names for Korean-only students ----------
+   Suggests a spelling of the given name (the family name is left out, as on the tags), using the
+   Revised Romanization rules with the usual name-friendly simplifications. The teacher checks
+   and edits the suggestions before they are used. */
+const R_INIT = ['g', 'kk', 'n', 'd', 'tt', 'r', 'm', 'b', 'pp', 's', 'ss', '', 'j', 'jj', 'ch', 'k', 't', 'p', 'h'];
+const R_MED = ['a', 'ae', 'ya', 'yae', 'eo', 'e', 'yeo', 'ye', 'o', 'wa', 'wae', 'oe', 'yo', 'u', 'wo', 'we', 'wi', 'yu', 'eu', 'ui', 'i'];
+const R_FIN = ['', 'k', 'k', 'k', 'n', 'n', 'n', 't', 'l', 'k', 'm', 'l', 'l', 'l', 'p', 'l', 'm', 'p', 'p', 't', 't', 'ng', 't', 't', 'k', 't', 'p', 't'];
+// A final consonant moves onto a following silent ㅇ (민아 -> Mina, 온유 -> Onyu).
+const R_LINK = { 1: 'g', 4: 'n', 7: 'd', 8: 'r', 16: 'm', 17: 'b', 19: 's', 21: 'ng', 22: 'j', 23: 'ch', 25: 't', 27: 'h' };
+const TWO_SYLLABLE_SURNAMES = ['남궁', '황보', '제갈', '선우', '독고', '사공', '서문', '동방'];
+function romanize(kor) {
+  const k = clean(kor).replace(/\s+/g, '');
+  if (!/^[가-힣]{2,5}$/.test(k)) return '';
+  const given = k.length >= 4 && TWO_SYLLABLE_SURNAMES.includes(k.slice(0, 2)) ? k.slice(2) : k.length >= 2 ? k.slice(1) : k;
+  const syl = [...given].map(ch => { const n = ch.charCodeAt(0) - 0xAC00; return { i: Math.floor(n / 588), m: Math.floor(n % 588 / 28), f: n % 28 }; });
+  let out = '';
+  syl.forEach((s, x) => {
+    const next = syl[x + 1];
+    let init = R_INIT[s.i];
+    if (x > 0 && s.i === 5 && syl[x - 1].f === 8) init = 'l'; // ㄹㄹ -> ll
+    out += init + R_MED[s.m];
+    if (!s.f) return;
+    if (next && next.i === 11 && R_LINK[s.f] !== undefined) out += R_LINK[s.f];
+    else out += R_FIN[s.f];
+  });
+  return out.charAt(0).toUpperCase() + out.slice(1);
+}
+const korOnlyNames = c => [...new Set(c.names.filter(n => { const p = splitName(n); return n && !p.eng && p.kor && !(c.korKeep || []).includes(n); }))];
+function romHTML(c) {
+  if (state.nameMode === 'kor') return '';
+  const list = korOnlyNames(c);
+  if (!list.length) return '';
+  return `<div class="rombar"><b>${L(list.length === 1 ? '1 student has no English name.' : `${list.length} students have no English name.`, `영어 이름이 없는 학생 ${list.length}명`)}</b>
+    ${L('Check or change the suggested spelling:', '추천 영어 이름을 확인하거나 고치세요:')}
+    <div class="rom-list">${list.map(n => `<span>${esc(splitName(n).kor)}</span><input type="text" data-kor="${esc(n)}" value="${esc(romanize(splitName(n).kor))}">`).join('')}</div>
+    <span class="nb-btns"><button class="small" data-act="romuse">${L('Add these English names', '이 영어 이름 넣기')}</button><button class="small" data-act="romkeep">${L('Keep Korean only', '한국어만 쓰기')}</button></span></div>`;
 }
 
 /* ---------- parsing a class list (rows = arrays of cells) ---------- */
@@ -1097,6 +1171,26 @@ document.getElementById('bookmarklet').href = 'javascript:' + encodeURIComponent
 const layout = () => ({ cols: 5, rows: 6, cw: 57, rh: 32.5 });
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tues', 'Wed', 'Thurs', 'Fri', 'Sat'];
+// Classes always meet in pairs: any Monday or Wednesday means "Mon / Wed", Tuesday or Thursday "Tues / Thurs".
+function pairDays(days) {
+  const d = String(days || '').toLowerCase();
+  if (/mon|wed|월|수/.test(d) && !/tue|thu|화|목/.test(d)) return 'Mon / Wed';
+  if (/tue|thu|화|목/.test(d) && !/mon|wed|월|수/.test(d)) return 'Tues / Thurs';
+  return days || '';
+}
+
+// Subject: a plain dropdown of the usual subjects (a typed-in subject still works through "Other").
+const SUBJECTS = ['Debate', 'Grammar', 'Integrated', 'Language Arts', 'Phonics', 'Speaking', 'Writing', 'TOEFL Reading'];
+function subjectHTML(c) {
+  const known = SUBJECTS.find(x => x.toLowerCase() === clean(c.subject || '').toLowerCase());
+  const other = !!clean(c.subject || '') && !known || c.subjectOther;
+  return `<select data-f="subjectSel">
+      <option value="" ${!c.subject && !other ? 'selected' : ''}>${L('Choose…', '고르세요…')}</option>
+      ${SUBJECTS.map(x => `<option ${known === x && !c.subjectOther ? 'selected' : ''}>${x}</option>`).join('')}
+      <option value="__other" ${other ? 'selected' : ''}>${L('Other (type it)…', '기타 (직접 입력)…')}</option>
+    </select>
+    <input type="text" data-f="subject" value="${esc(c.subject)}" placeholder="${L('Type the subject', '과목 입력')}"${other ? '' : ' hidden'} style="margin-top:4px">`;
+}
 
 // The same child, even if the import spells the name a little differently (spaces, capitals) or
 // only has one half of it. Two children who share an English name are told apart by the Korean.
@@ -1134,7 +1228,7 @@ function applyGroups(groups) {
     // Each pasted day adds its weekday, so Monday + Wednesday pastes give "Mon / Wed".
     if (groups.weekday !== undefined && (!c.days || c.daysAuto)) {
       c.weekdays = [...new Set([...(c.weekdays || []), groups.weekday])].sort((a, b) => (a || 7) - (b || 7));
-      c.days = c.weekdays.map(d => WEEKDAYS[d]).join(' / ');
+      c.days = pairDays(c.weekdays.map(d => WEEKDAYS[d]).join(' / '));
       c.daysAuto = true;
     }
     students += names.length;
@@ -1237,11 +1331,12 @@ async function clearAll() {
 }
 
 function renderClasses() {
+  renderLegend();
   const el = document.getElementById('classes');
   renderClassBar();
   if (!state.classes.length) { el.innerHTML = `<div class="empty">${L('No classes yet. Import a class list or click <i>Add a class</i>.', '아직 반이 없습니다. 반 명단을 가져오거나 <i>반 추가</i>를 누르세요.')}</div>`; return; }
   el.innerHTML = state.classes.map(c => `
-    <div class="class-card ${c.include || state.reprint ? '' : 'off'}${c.id === activeId ? ' active' : ''}" data-id="${c.id}">
+    <div class="class-card ${c.include || state.reprint ? '' : 'off'}${c.id === activeId ? ' active' : ''}" data-id="${c.id}"${classColor(c) ? ` style="border-left-color:${classColor(c).strong}"` : ''}>
       <div class="head">
         <strong>${esc(c.name) || L('New class', '새 반')}</strong>
         <span class="count">${countText(c)}</span>
@@ -1251,14 +1346,15 @@ function renderClasses() {
         </select>
         <button class="small danger" data-act="remove" title="${L('Remove class', '반 삭제')}">✕</button>
       </div>
+      ${romHTML(c)}
       ${(c.newNames || []).length ? `<div class="newbar"><b>${L('New since last import:', '지난번 이후 새 학생:')}</b> ${c.newNames.map(esc).join(', ')}
         <span class="nb-btns"><button class="small" data-act="ticknew">${L('Reprint these', '이 학생들 인쇄')}</button><button class="small" data-act="dismissnew">${L('Dismiss', '닫기')}</button></span></div>` : ''}
       <div class="row">
         <div><label>${L('Class', '반')}</label><input type="text" data-f="name" value="${esc(c.name)}" placeholder="${L('e.g. V2-5', '예: V2-5')}"></div>
-        <div><label>${L('Subject', '과목')}</label><input type="text" data-f="subject" list="subjects" value="${esc(c.subject)}" placeholder="${L('choose or type', '고르거나 입력')}"></div>
+        <div><label>${L('Subject', '과목')}<span class="dotwrap">${subDot(c)}</span></label>${subjectHTML(c)}</div>
       </div>
       <div class="row">
-        <div><div class="dayhead"><label>${L('Days', '요일')}</label>${DAY_CHOICES.map(d => `<button class="small daychip" data-act="days" data-v="${d}">${d}</button>`).join('')}</div>
+        <div><div class="dayhead"><label>${L('Days', '요일')}</label>${DAY_CHOICES.map(d => `<button class="small daychip${clean(c.days) === d ? ' on' : ''}" data-act="days" data-v="${d}">${d}</button>`).join('')}</div>
           <input type="text" data-f="days" list="dayslist" value="${esc(c.days)}" placeholder="${L('pick above or type', '위에서 고르거나 입력')}"></div>
         <div><label>${L('Teacher (blank = your name)', '선생님 (비우면 내 이름)')}</label><input type="text" data-f="teacher" value="${esc(c.teacher)}"></div>
       </div>
@@ -1325,6 +1421,14 @@ document.getElementById('classes').addEventListener('input', e => {
   const c = state.classes.find(x => x.id == card.dataset.id); const f = e.target.dataset.f;
   if (!c || !f) return;
   if (f === 'include') { c.include = e.target.checked; card.classList.toggle('off', !c.include); renderClassBar(); }
+  else if (f === 'subjectSel') {
+    const box = card.querySelector('[data-f="subject"]');
+    c.subjectOther = e.target.value === '__other';
+    if (c.subjectOther) { box.hidden = false; box.value = ''; c.subject = ''; box.focus(); }
+    else { box.hidden = true; c.subject = e.target.value; box.value = c.subject; }
+    const cc = classColor(c); card.style.borderLeftColor = cc ? cc.strong : ''; card.querySelector('.dotwrap').innerHTML = subDot(c);
+  }
+  else if (f === 'days') { card.querySelectorAll('.daychip').forEach(b => b.classList.toggle('on', b.dataset.v === clean(e.target.value))); c.days = e.target.value; c.daysAuto = false; }
   else if (f === 'pick') {
     const p = new Set(c.picked || []), n = e.target.dataset.name;
     if (e.target.checked) p.add(n); else p.delete(n);
@@ -1337,10 +1441,21 @@ document.getElementById('classes').addEventListener('input', e => {
     if (c.newNames) c.newNames = c.newNames.filter(n => c.names.includes(n));
     card.querySelector('.count').textContent = countText(c);
     const pl = card.querySelector('.picklist'); if (pl) pl.innerHTML = pickHTML(c);
+    const rb = card.querySelector('.rombar'), rh = romHTML(c);
+    if (rb && !rh) rb.remove();
+    else if (!rb && rh) card.querySelector('.head').insertAdjacentHTML('afterend', rh);
   }
   else if (f === 'copies') { c.copies = +e.target.value; card.querySelector('.count').textContent = countText(c); }
-  else { c[f] = e.target.value; if (f === 'days') c.daysAuto = false; if (f === 'name') card.querySelector('strong').textContent = c.name || L('New class', '새 반'); }
+  else { c[f] = e.target.value; if (f === 'days') c.daysAuto = false;
+    if (f === 'subject') { const cc = classColor(c); card.style.borderLeftColor = cc ? cc.strong : ''; card.querySelector('.dotwrap').innerHTML = subDot(c); } if (f === 'name') card.querySelector('strong').textContent = c.name || L('New class', '새 반'); }
   if (f === 'include' || f === 'copies' || f === 'pick' || f === 'pickcount') render(); else scheduleRender();
+});
+// Typed days become the pair when the box is left: "Mon" -> "Mon / Wed", "thurs" -> "Tues / Thurs".
+document.getElementById('classes').addEventListener('change', e => {
+  if (e.target.dataset.f !== 'days') return;
+  const c = state.classes.find(x => x.id == e.target.closest('.class-card').dataset.id);
+  if (!c || pairDays(c.days) === c.days) return;
+  c.days = pairDays(c.days); renderClasses(); render();
 });
 document.getElementById('classes').addEventListener('click', async e => {
   const act = e.target.dataset.act;
@@ -1350,10 +1465,25 @@ document.getElementById('classes').addEventListener('click', async e => {
   if (act === 'ticknew') { tickNew([c]); return; }
   if (act === 'days') {
     c.days = e.target.dataset.v; c.daysAuto = false;
-    e.target.closest('.class-card').querySelector('[data-f="days"]').value = c.days;
+    const cardEl = e.target.closest('.class-card');
+    cardEl.querySelector('[data-f="days"]').value = c.days;
+    cardEl.querySelectorAll('.daychip').forEach(b => b.classList.toggle('on', b.dataset.v === c.days));
     render(); return;
   }
   if (act === 'dismissnew') { c.newNames = []; renderClasses(); render(); return; }
+  if (act === 'romuse' || act === 'romkeep') {
+    const card = e.target.closest('.class-card');
+    if (act === 'romkeep') c.korKeep = [...new Set([...(c.korKeep || []), ...korOnlyNames(c)])];
+    else card.querySelectorAll('.rombar input[data-kor]').forEach(inp => {
+      const eng = clean(inp.value), kor = inp.dataset.kor;
+      if (!eng) return;
+      const full = `${eng} | ${splitName(kor).kor}`;
+      c.names = c.names.map(n => n === kor ? full : n);
+      if (c.picked) c.picked = c.picked.map(n => n === kor ? full : n);
+      if (c.newNames) c.newNames = c.newNames.map(n => n === kor ? full : n);
+    });
+    renderClasses(); render(); return;
+  }
   if (c && c.names.length && !await ask(L(`Remove ${esc(c.name || 'this class')} and its ${c.names.length} names?`, `${esc(c.name || '이 반')}과(와) 이름 ${c.names.length}개를 삭제할까요?`), L('Remove', '삭제'))) return;
   state.classes = state.classes.filter(x => x.id != id);
   renderClasses(); render();
@@ -1436,7 +1566,9 @@ function tagHTML(c, name, ci) {
     <div class="name" style="font-size:${nameSize(n.text)}pt">${n.html}</div>
     <div class="mid" style="font-size:${midSize(cls, c.days)}pt"><span>${esc(cls)}</span><span>${esc(c.days)}</span></div>
     <div class="foot"><span class="school">${esc(state.style === 'topia' ? state.school.replace(/^TOPIA$/i, 'TOPIΛ') : state.school)}</span><span class="teacher">${esc(teacher)}</span></div>`;
-  const attrs = `data-cid="${c.id}"${c.id === activeId ? ' class="tag active"' : ' class="tag"'}`;
+  const cc = classColor(c);
+  const attrs = `data-cid="${c.id}" class="tag${cc ? ' cc' : ''}${c.id === activeId ? ' active' : ''}"` +
+    (cc ? ` style="--cc-bg:${cc.bg};--cc-fg:${cc.fg};--cc-strong:${cc.strong}"` : '');
   const mark = (c.newNames || []).includes(name) ? '<span class="newmark noprint">NEW</span>' : ''; // screen only
   const SQUIRREL_ = SQUIRREL + mark;
   return state.style === 'cute'
@@ -1543,95 +1675,42 @@ function cropMarks(label) {
     `<text x="${W - x0 - 2}" y="${H - y0 / 2 + 1}" font-size="2" font-family="Arial, sans-serif" fill="#999" text-anchor="end">Name tags by Joseph McLaren</text></svg>`;
 }
 
-// Printer check: one page with 10 cm rulers both ways and the tag outlines, so a teacher can see
-// whether the print dialog is shrinking the page ("Fit to page") before printing a stack of tags.
-function printTestPage() {
-  const { cols, rows, cw: CW, rh: RH } = layout();
-  const W = 297, H = 210, x0 = (W - cols * CW) / 2, y0 = (H - rows * RH) / 2;
-  let boxes = '';
-  for (let r = 0; r < rows; r++) for (let k = 0; k < cols; k++)
-    boxes += `<rect x="${x0 + k * CW}" y="${y0 + r * RH}" width="${CW}" height="${RH}" fill="none" stroke="#bbb" stroke-width=".2" stroke-dasharray="1.2 1"/>`;
-  const ruler = (x, y, vertical) => {
-    let t = '';
-    for (let mm = 0; mm <= 100; mm++) {
-      const len = mm % 10 === 0 ? 4 : mm % 5 === 0 ? 2.8 : 1.6;
-      t += vertical ? `M${x} ${y + mm}h${len}` : `M${x + mm} ${y}v${-len}`;
-    }
-    let nums = '';
-    for (let cm = 0; cm <= 10; cm++) nums += vertical
-      ? `<text x="${x + 5}" y="${y + cm * 10 + 1}" font-size="2.6">${cm}</text>`
-      : `<text x="${x + cm * 10}" y="${y - 5}" font-size="2.6" text-anchor="middle">${cm}</text>`;
-    const line = vertical ? `M${x} ${y}V${y + 100}` : `M${x} ${y}H${x + 100}`;
-    return `<path d="${line}${t}" stroke="#000" stroke-width=".3" fill="none"/>${nums}`;
-  };
-  const bx = 34.5, by = 23.75, bw = 228, bh = 162.5; // the instructions panel
-  const lines = isKo() ? [
-    ['프린터 확인', 6, 'bold'],
-    ['1. 자로 검은 선 두 개를 재 보세요. 둘 다 정확히 10cm여야 합니다.', 3.6],
-    ['2. 10cm보다 짧나요? 인쇄 창에서 배율을 100%(또는 실제 크기)로 하고', 3.6],
-    ['    "페이지에 맞추기"를 끈 다음 이 페이지를 다시 인쇄하세요.', 3.6],
-    ['3. 점선 상자는 이름표가 인쇄되는 자리입니다. 종이 가장자리의 짧은 선은', 3.6],
-    ['    재단선이며, 상자의 모서리와 맞닿아야 합니다.', 3.6],
-  ] : [
-    ['Printer check', 6, 'bold'],
-    ['1. Measure both black lines with a ruler. Each should be exactly 10 cm.', 3.6],
-    ['2. Shorter than 10 cm? In the print dialog, set Scale to 100% (or Actual size)', 3.6],
-    ['    and turn off "Fit to page" / "Shrink to fit". Then print this page again.', 3.6],
-    ['3. The dashed boxes are where the tags print. The short lines at the paper', 3.6],
-    ['    edges are the cutting guides, and they should touch the boxes\' corners.', 3.6],
-  ];
-  let ty = by + 12, text = '';
-  lines.forEach(([t, size, weight]) => { text += `<text x="${bx + 8}" y="${ty}" font-size="${size}" font-weight="${weight || 'normal'}">${esc(t)}</text>`; ty += size + 3; });
-  document.getElementById('testpage').innerHTML =
-    `<svg viewBox="0 0 ${W} ${H}" font-family="Arial, sans-serif" fill="#222">${boxes}` +
-    cropMarks(L('Printer check page', '프린터 확인 페이지')).replace(/^<svg[^>]*>|<\/svg>$/g, '') +
-    `<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="#fff" stroke="#7A1701" stroke-width=".4"/>${text}` +
-    ruler(bx + 8, by + bh - 14, false) + ruler(bx + bw - 22, by + 10, true) +
-    `<text x="${bx + 58}" y="${by + bh - 7}" font-size="3" text-anchor="middle">10 cm</text></svg>`;
-  printOut(true);
-}
-
 /* Printing. As a plain file the tool opens the print dialog itself. Online (on claude.ai) a page
    can't open the print dialog, so it saves a small print file holding just the tag pages, which
    opens the print dialog when the teacher opens it. */
 const downloadsReady = window.claude && typeof window.claude.use === 'function'
   ? Promise.resolve(window.claude.use('downloads')).catch(() => null) : Promise.resolve(null);
-async function printOut(test) {
+async function printOut() {
   const downloads = await downloadsReady;
   if (!downloads) {
-    if (test) document.body.classList.add('testprint');
     window.print();
     return;
   }
   const pages = document.getElementById('pages').innerHTML;
-  if (!test && !document.querySelector('#pages .page')) { showMsg(L('Add a class first.', '먼저 반을 추가하세요.')); return; }
+  if (!document.querySelector('#pages .page')) { showMsg(L('Add a class first.', '먼저 반을 추가하세요.')); return; }
   const day = new Date().toISOString().slice(0, 10);
   const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="author" content="Joseph McLaren">' +
-    `<title>${test ? 'Printer check' : 'Name tags ' + day}</title><style>${document.querySelector('style').textContent}
+    `<title>Name tags ${day}</title><style>${document.querySelector('style').textContent}
     .printnote { font: 14px/1.5 Arial, sans-serif; color: #333; background: #FBEDC5; padding: 12px 16px; margin: 0 0 16px; }
     @media print { .printnote { display: none; } }</style></head>` +
-    `<body${test ? ' class="testprint"' : ''}>${document.querySelector('body > svg').outerHTML}` +
+    `<body>${document.querySelector('body > svg').outerHTML}` +
     `<p class="printnote">${L('The print window should open by itself. If it doesn\'t, press <b>Ctrl+P</b> (<b>⌘P</b> on a Mac). Use paper size A4, landscape, margins <b>None</b>, scale <b>100%</b>.',
       '인쇄 창이 자동으로 열립니다. 열리지 않으면 <b>Ctrl+P</b> (Mac은 <b>⌘P</b>)를 누르세요. 용지 A4, 가로, 여백 <b>없음</b>, 배율 <b>100%</b>로 인쇄하세요.')}<br>` +
     `<span style="font-size:11px;opacity:.6">Name Tag Generator by Joseph McLaren</span></p>` +
-    `<div id="testpage">${test ? document.getElementById('testpage').innerHTML : ''}</div>` +
-    `<div id="preview-area"><div id="pages">${test ? '' : pages}</div></div>` +
+    `<div id="preview-area"><div id="pages">${pages}</div></div>` +
     '<script>addEventListener("load", function () { setTimeout(function () { window.print(); }, 400); });<\/script></body></html>';
   try {
-    await downloads.save({ filename: test ? 'printer-check.html' : `name-tags-${day}.html`, data: html });
+    await downloads.save({ filename: `name-tags-${day}.html`, data: html });
   } catch (e) {
     if (!e || e.code !== 'declined') showMsg(L('Could not save the print file. Try again in a moment.', '인쇄 파일을 저장하지 못했습니다. 잠시 후 다시 해 보세요.'));
     return;
   }
-  if (test) return;
   showNotice(L('<b>Print file saved.</b> Open it from your downloads and it will print. Done? Sign out so the next teacher can\'t see your classes.',
     '<b>인쇄 파일을 저장했습니다.</b> 다운로드에서 열면 인쇄됩니다. 다 끝났나요? 다음 선생님이 내 반 목록을 보지 않도록 로그아웃하세요.'),
     [[L('Sign out', '로그아웃'), () => signOut()], [L('Not yet', '나중에'), hideNotice]], 'print');
 }
 window.addEventListener('afterprint', () => {
-  const wasTest = document.body.classList.contains('testprint');
-  document.body.classList.remove('testprint');
-  if (wasTest || !currentId) return;
+  if (!currentId) return;
   setTimeout(() => showNotice(L("<b>Finished printing?</b> Sign out so the next teacher can't see your classes. They stay saved for next time.", '<b>인쇄가 끝났나요?</b> 다음 선생님이 내 반 목록을 보지 않도록 로그아웃하세요. 반 목록은 다음을 위해 저장됩니다.'),
     [[L('Sign out', '로그아웃'), () => signOut()], [L('Not yet', '나중에'), hideNotice]], 'print'), 300);
 });
@@ -1696,9 +1775,6 @@ const TOUR = [
   { sel: ['#pages .page', '#preview-area'],
     en: ['Check the preview', 'This is exactly what prints, page by page. Click any tag to jump to its class on the left.'],
     ko: ['미리 보기 확인', '인쇄되는 모습 그대로 한 쪽씩 보여 줍니다. 이름표를 누르면 왼쪽의 해당 반으로 이동합니다.'] },
-  { sel: '#printcheck-btn', prefer: 'bottom',
-    en: ['New printer? Check it first', 'Print this one check page and measure the two lines. If they aren\'t 10 cm, set the scale to 100% in the print window.'],
-    ko: ['새 프린터라면 먼저 확인', '확인 페이지를 한 장 인쇄하고 선 두 개를 재 보세요. 10cm가 아니면 인쇄 창에서 배율을 100%로 맞추세요.'] },
   { sel: '#print-btn', prefer: 'bottom',
     en: ['4. Print and cut', 'Print with the scale at 100% and Background graphics turned on. Then cut along the guides.'],
     ko: ['4. 인쇄하고 자르기', '배율 100%, 배경 그래픽 켜기로 인쇄하세요. 그다음 재단선을 따라 자르세요.'] },
