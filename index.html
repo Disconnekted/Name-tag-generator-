@@ -12,6 +12,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="author" content="Joseph McLaren">
 <title>Name Tag Generator</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#7A1701">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Name Tags">
+<script>
+  // Lets Chrome / Edge offer "Install Name Tag Generator" (only on the website, not when opened as a file).
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
+</script>
 <style>
   :root {
     --maroon: #7A1701;
