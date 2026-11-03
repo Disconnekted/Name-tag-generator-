@@ -85,7 +85,7 @@
   .tag[data-cid] { cursor: pointer; }
   .page { position: relative; }
   #pages.measuring .mid span, #pages.measuring .foot span { flex: none; overflow: visible; }
-  .page svg.crop { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .page svg.crop { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
   .summary { font-size: 13px; color: #444; margin: 0 0 10px; }
   #pages { transform-origin: top left; }
   .print-mode { display: flex; gap: 6px; margin: 2px 0 6px; }
@@ -1670,14 +1670,17 @@ function fitNames() {
 }
 
 // Guillotine guides: the 5 x 6 grid always sits in the same place on every page, so these marks line
-// up through a whole stack. Each mark runs from the page edge to 1 mm short of the tags.
+// up through a whole stack. Bold marks run from the page edge right up to the tags, and a thin line
+// runs along every cut between the tags themselves, so the cuts still show when a printer leaves the
+// paper's edge blank.
 function cropMarks(label) {
   const { cols, rows, cw: CW, rh: RH } = layout();
-  const W = 297, H = 210, x0 = (W - cols * CW) / 2, y0 = (H - rows * RH) / 2, gap = 1;
-  let d = '';
-  for (let k = 0; k <= cols; k++) { const x = x0 + k * CW; d += `M${x} 0V${y0 - gap}M${x} ${H - y0 + gap}V${H}`; }
-  for (let k = 0; k <= rows; k++) { const y = y0 + k * RH; d += `M0 ${y}H${x0 - gap}M${W - x0 + gap} ${y}H${W}`; }
-  return `<svg class="crop" viewBox="0 0 ${W} ${H}" aria-hidden="true"><path d="${d}" stroke="#000" stroke-width=".25" fill="none"/>` +
+  const W = 297, H = 210, x0 = (W - cols * CW) / 2, y0 = (H - rows * RH) / 2;
+  let d = '', grid = '';
+  for (let k = 0; k <= cols; k++) { const x = x0 + k * CW; d += `M${x} 0V${y0}M${x} ${H - y0}V${H}`; grid += `M${x} ${y0}V${H - y0}`; }
+  for (let k = 0; k <= rows; k++) { const y = y0 + k * RH; d += `M0 ${y}H${x0}M${W - x0} ${y}H${W}`; grid += `M${x0} ${y}H${W - x0}`; }
+  return `<svg class="crop" viewBox="0 0 ${W} ${H}" aria-hidden="true"><path d="${d}" stroke="#000" stroke-width=".6" fill="none"/>` +
+    `<path d="${grid}" stroke="#444" stroke-width=".2" fill="none" opacity=".85"/>` +
     `<text x="${x0 + 2}" y="${H - y0 / 2 + 1}" font-size="2.6" font-family="Arial, sans-serif" fill="#555">${esc(label)}</text></svg>`;
 }
 // The creator's credit, printed in the bottom margin of every page whether or not the cutting guides are on.
