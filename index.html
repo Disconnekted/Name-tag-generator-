@@ -88,6 +88,10 @@
   .class-card select.copies { width: auto; padding: 3px 6px; font-size: 13px; }
   .class-card .namelist { display: flex; flex-wrap: wrap; gap: 4px; font-size: 13px; }
   .class-card .namelist span { padding: 2px 8px; border-radius: 10px; background: rgba(0,0,0,.05); }
+  .class-card .namelist span.added { background: rgba(122,23,1,.1); }
+  .class-card .namelist .x { border: 0; background: none; padding: 0 0 0 5px; font-size: 11px; color: var(--muted); cursor: pointer; }
+  .class-card .addname { display: flex; gap: 6px; margin-top: 8px; }
+  .class-card .addname input { flex: 1; }
   .empty { font-size: 13px; color: var(--muted); padding: 10px 0 2px; }
   /* The preview floats beside the class list and follows whichever class is being edited. */
   #preview-area { position: sticky; top: calc(var(--hh, 62px) + 12px); max-height: calc(100vh - var(--hh, 62px) - 24px); overflow: auto; padding-right: 4px; }
@@ -414,7 +418,7 @@
         <label><input type="radio" name="printmode" value="reprint"><span data-i18n="reprint">Reprint some students</span></label>
       </div>
       <p class="hint" id="reprint-hint" hidden data-i18n="reprintHint">Tick the students who need a new tag (a new student, or a lost tag). Only those tags print, packed together on as few pages as possible. Need two of someone? Change ×1 to ×2 next to their name. <a href="#" onclick="clearPicks();return false">Untick everyone</a></p>
-      <p class="hint" data-i18n="hint3">Pick the subject and days, and untick classes you don't need. Use ×2 or ×3 next to a class to print extra copies of each tag. Names come from TOPIA. If one is wrong, fix it on TOPIA and copy the students again.</p>
+      <p class="hint" data-i18n="hint3">Pick the subject and days, and untick classes you don't need. Use ×2 or ×3 next to a class to print extra copies of each tag. Names come from TOPIA. A student missing? Type their name in the box under the class and click Add.</p>
       <datalist id="subjects">
         <option>Debate</option><option>Grammar</option><option>Integrated</option><option>Language Arts</option>
         <option>Phonics</option><option>Speaking</option><option>Writing</option>
@@ -468,7 +472,7 @@ const KO = {
   d3: '3. 반별 확인',
   printAll: '모든 반 인쇄', reprint: '일부 학생만 다시 인쇄',
   reprintHint: '새 이름표가 필요한 학생(새 학생, 잃어버린 이름표)을 체크하세요. 체크한 이름표만 최대한 적은 장수에 모아 인쇄됩니다. 두 장이 필요하면 이름 옆의 ×1을 ×2로 바꾸세요. <a href="#" onclick="clearPicks();return false">모두 체크 해제</a>',
-  hint3: '과목과 요일을 고르고, 필요 없는 반은 체크를 해제하세요. 반 옆의 ×2, ×3으로 이름표를 여러 장 인쇄할 수 있습니다. 이름은 TOPIA에서 가져옵니다. 이름이 틀렸다면 TOPIA에서 고친 뒤 학생을 다시 복사하세요.',
+  hint3: '과목과 요일을 고르고, 필요 없는 반은 체크를 해제하세요. 반 옆의 ×2, ×3으로 이름표를 여러 장 인쇄할 수 있습니다. 이름은 TOPIA에서 가져옵니다. 빠진 학생이 있으면 반 아래 칸에 이름을 입력하고 추가를 누르세요.',
 };
 const isKo = () => state.lang === 'ko';
 const L = (en, ko) => isKo() ? ko : en;
@@ -1196,7 +1200,9 @@ function applyGroups(groups) {
         c.newNames = [...new Set([...(c.newNames || []).filter(n => names.includes(n)), ...added])];
         added.forEach(n => fresh.push(`${splitName(n).eng || splitName(n).kor} (${c.name})`));
       }
-      c.names = names;
+      const keep = (c.added || []).filter(a => !names.some(n => sameStudent(n, a)));
+      c.added = keep;
+      c.names = [...names, ...keep];
     }
     if (subjects.has(raw) && !c.subject) c.subject = clean(subjects.get(raw));
     // Each pasted day adds its weekday, so Monday + Wednesday pastes give "Mon / Wed".
@@ -1273,8 +1279,10 @@ function renderClasses() {
           <input type="text" data-f="days" list="dayslist" value="${esc(c.days)}" placeholder="${L('pick above or type', '위에서 고르거나 입력')}"></div>
         <div><label>${L('Teacher (blank = your name)', '선생님 (비우면 내 이름)')}</label><input type="text" data-f="teacher" value="${esc(c.teacher)}"></div>
       </div>
-      <label>${L('Students (from TOPIA)', '학생 (TOPIA에서 가져옴)')}</label>
-      <div class="namelist">${c.names.map(n => `<span>${esc(clean(String(n).replace(/^\|\s*|\s*\|$/g, '')) || '–')}</span>`).join('')}</div>
+      <label>${L('Students', '학생')}</label>
+      <div class="namelist">${c.names.map(n => `<span${isAdded(c, n) ? ' class="added"' : ''}>${esc(clean(String(n).replace(/^\|\s*|\s*\|$/g, '')) || '–')}` +
+        (isAdded(c, n) ? `<button class="x" data-act="delname" data-name="${esc(n)}" title="${L('Remove this student', '이 학생 삭제')}">✕</button>` : '') + '</span>').join('')}</div>
+      <div class="addname"><input type="text" data-addname placeholder="${L('Add a student, e.g. Soyul | 김소율', '학생 추가, 예: Soyul | 김소율')}"><button class="small" data-act="addname">${L('Add', '추가')}</button></div>
       ${state.reprint ? `<div class="picklist">${pickHTML(c)}</div>` : ''}
     </div>`).join('');
   updateNewAll();
@@ -1319,6 +1327,32 @@ function pickHTML(c) {
           `<option value="${k}" ${pickCount(c, n) === k ? 'selected' : ''}>×${k}</option>`).join('')}</select>` : '') + '</label>').join('')
     : `<span class="none">${L('No students in this class yet.', '이 반에는 아직 학생이 없습니다.')}</span>`;
 }
+// Students typed in by hand (kept apart so a new TOPIA copy doesn't drop them, and only they can be removed).
+const isAdded = (c, n) => (c.added || []).includes(n);
+function typedName(t) {
+  t = clean(t); if (!t) return '';
+  const pair = t.match(NAME_PAIR);
+  if (pair) return `${clean(pair[1])} | ${clean(pair[2])}`;
+  let [e, k = ''] = t.split('|').map(clean);
+  if (/[ㄱ-힣]/.test(e) && !/[ㄱ-힣]/.test(k)) [e, k] = [k, e];
+  return e && k ? `${e} | ${k}` : (e || `| ${k}`);
+}
+function addStudent(c, input) {
+  const n = typedName(input.value);
+  if (!n) { input.focus(); return; }
+  if (c.names.some(o => sameStudent(o, n))) { showMsg(L(`${n} is already in ${c.name}.`, `${n} 학생은 이미 ${c.name}에 있습니다.`), false); return; }
+  c.names.push(n);
+  c.added = [...(c.added || []), n];
+  if (state.reprint) c.picked = [...new Set([...(c.picked || []), n])]; // a new student needs a tag
+  renderClasses(); render();
+  const box = document.querySelector(`.class-card[data-id="${c.id}"] [data-addname]`); if (box) box.focus();
+}
+document.getElementById('classes').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || !e.target.matches('[data-addname]')) return;
+  e.preventDefault();
+  const c = state.classes.find(x => x.id == e.target.closest('.class-card').dataset.id);
+  if (c) addStudent(c, e.target);
+});
 const pickCount = (c, n) => (c.pickCounts && c.pickCounts[n]) || 1;
 function pickedNames(c) { const p = new Set(c.picked || []); return c.names.filter(n => n && p.has(n)); }
 function clearPicks() { state.classes.forEach(c => { c.picked = []; }); renderClasses(); render(); }
@@ -1378,6 +1412,13 @@ document.getElementById('classes').addEventListener('click', async e => {
   const id = e.target.closest('.class-card').dataset.id;
   const c = state.classes.find(x => x.id == id);
   if (act === 'ticknew') { tickNew([c]); return; }
+  if (act === 'addname') { addStudent(c, e.target.closest('.class-card').querySelector('[data-addname]')); return; }
+  if (act === 'delname') {
+    const n = e.target.dataset.name;
+    c.names = c.names.filter(x => x !== n); c.added = (c.added || []).filter(x => x !== n);
+    if (c.picked) c.picked = c.picked.filter(x => x !== n);
+    renderClasses(); render(); return;
+  }
   if (act === 'days') {
     c.days = e.target.dataset.v; c.daysAuto = false;
     const cardEl = e.target.closest('.class-card');
@@ -1396,6 +1437,7 @@ document.getElementById('classes').addEventListener('click', async e => {
       c.names = c.names.map(n => n === kor ? full : n);
       if (c.picked) c.picked = c.picked.map(n => n === kor ? full : n);
       if (c.newNames) c.newNames = c.newNames.map(n => n === kor ? full : n);
+      if (c.added) c.added = c.added.map(n => n === kor ? full : n);
     });
     renderClasses(); render(); return;
   }
