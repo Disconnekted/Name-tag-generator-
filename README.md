@@ -5,7 +5,7 @@ Made by Joseph McLaren.
 
 **Use it:** https://disconnekted.github.io/Name-tag-generator-/
 
-- Students come in one way: the *Copy students* bookmark on the TOPIA attendance page, then Ctrl+V in the tool.
+- Students come from the *Copy students* bookmark on the TOPIA attendance page (Ctrl+V in the tool). A missing student can be typed in under their class.
 - Four tag styles, crop marks for cutting, reprints of single students, Korean / English screen.
 - Each teacher picks their name when the tool opens. Their classes are saved in that browser.
 - Can be installed as a desktop app from Chrome or Edge (Install icon in the address bar).
