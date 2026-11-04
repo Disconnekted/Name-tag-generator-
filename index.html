@@ -590,7 +590,7 @@ function setSync(s) {
    Teachers type the school password once on each computer. sheetDb() answers the same calls as the
    claude.ai database, so the rest of the tool doesn't need to know which one it is talking to.
    It looks for changes from other computers every 30 seconds while the page is in front, and when it comes back. */
-const SHEET_URL = '';
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxWt1P8a1C-eywKK9HRgDohuqo5X_6TlDwfhkED-oKIxEyzBOWslsfN74tH-Z7TEd3DiA/exec';
 const SHEET_PW_KEY = 'nameTagGenerator.sheetPassword', SHEET_CACHE_KEY = 'nameTagGenerator.sheetCache';
 let cloudProblem = '';                     // '', 'password', 'wrongpw', 'offline' or 'setup': shown on the who screen
 const sheetPassword = () => { try { return localStorage.getItem(SHEET_PW_KEY) || ''; } catch (e) { return ''; } };
