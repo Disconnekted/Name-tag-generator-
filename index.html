@@ -62,7 +62,7 @@
   .panel h2 { margin: 0 0 10px; font-size: 15px; color: var(--maroon); }
   .panel p.hint { margin: 4px 0 10px; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
   label { font-size: 12.5px; color: #444; display: block; margin: 8px 0 3px; }
-  input[type=text], input[type=number], select, textarea { font: inherit; font-size: 14px; width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; background: #fff; }
+  input[type=text], input[type=password], input[type=number], select, textarea { font: inherit; font-size: 14px; width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; background: #fff; }
   textarea { resize: vertical; min-height: 90px; line-height: 1.4; }
   .row { display: flex; gap: 8px; }
   .row > * { flex: 1; min-width: 0; }
@@ -145,7 +145,7 @@
   html.dark button:disabled:hover { background: #2d2c28; }
   html.dark button.primary { background: var(--cream); color: var(--maroon); border-color: var(--cream); }
   html.dark button.danger { color: #ff8a80; }
-  html.dark input[type=text], html.dark input[type=number], html.dark select, html.dark textarea { background: #1b1a17; color: var(--ink); border-color: #4b4944; }
+  html.dark input[type=text], html.dark input[type=password], html.dark input[type=number], html.dark select, html.dark textarea { background: #1b1a17; color: var(--ink); border-color: #4b4944; }
   html.dark label, html.dark .check, html.dark .summary, html.dark .picklist label { color: #d2cec5; }
   html.dark .panel h2 { color: #f2b8a6; }
   html.dark a { color: #8fb8ff; }
@@ -263,8 +263,9 @@
   .who-pick { flex: 1; text-align: left; font-size: 16px; padding: 10px 14px; border-radius: 8px; }
   .who-form { display: flex; gap: 8px; flex-wrap: wrap; }
   .who-form input { flex: 1 1 140px; }
-  .who-form button.primary, #notice button.primary { background: var(--maroon); color: var(--cream); border-color: var(--maroon); }
+  .who-form button.primary, #notice button.primary, .who-card > button.primary { background: var(--maroon); color: var(--cream); border-color: var(--maroon); }
   .who-card p.hint { font-size: 12.5px; color: var(--muted); line-height: 1.45; margin: 16px 0 0; }
+  .who-card > button.primary { margin-top: 12px; }
   .who-err { color: #a00; font-size: 13px; min-height: 1em; margin: 6px 0 0; }
   .who-card .msg { display: block; margin: 12px 0 0; }
   #who-btn, #undo-btn, #redo-btn { font-size: 13px; background: transparent; color: var(--cream); border-color: rgba(251,237,197,.45); }
@@ -273,7 +274,7 @@
   #undo-btn:disabled:hover, #redo-btn:disabled:hover { background: transparent; }
   #undo-btn { margin-right: -10px; }
   html.dark .who-card h3 { color: #c9c5bc; }
-  html.dark .who-form button.primary, html.dark #notice button.primary { background: var(--cream); color: var(--maroon); border-color: var(--cream); }
+  html.dark .who-form button.primary, html.dark #notice button.primary, html.dark .who-card > button.primary { background: var(--cream); color: var(--maroon); border-color: var(--cream); }
   html.dark .who-err { color: #ff8a80; }
   html.dark #who-btn, html.dark #undo-btn, html.dark #redo-btn { background: transparent; color: var(--cream); }
   #notice { position: fixed; z-index: 8600; left: 50%; bottom: 24px; transform: translateX(-50%); width: min(440px, calc(100vw - 32px));
@@ -557,6 +558,7 @@ async function cloudFlush() {
   } catch (e) {
     if (!cloudQueue[id]) cloudQueue[id] = json;
     cloudWriting = false;
+    if (e && e.code === 'password') { needPassword(true); return; }
     setSync(e && e.code === 'invalid_argument' ? 'readonly' : e && e.code === 'quota_exceeded' ? 'full' : 'error');
     if (e && e.code === 'unavailable') { clearTimeout(cloudTimer); cloudTimer = setTimeout(cloudFlush, 3000 + Math.random() * 2000); }
     return;
@@ -581,6 +583,92 @@ function setSync(s) {
   }[s];
 }
 
+/* ---------- online saving in a Google Sheet ----------
+   On claude.ai the page's own database keeps every teacher's classes. Everywhere else (the website, the
+   desktop app, the file opened from a computer) they go to a Google Sheet that the tool's owner set up once
+   (see sync/README.md). SHEET_URL is that sheet's web app address; with it empty, classes stay in this browser.
+   Teachers type the school password once on each computer. sheetDb() answers the same calls as the
+   claude.ai database, so the rest of the tool doesn't need to know which one it is talking to.
+   It looks for changes from other computers every 30 seconds while the page is in front, and when it comes back. */
+const SHEET_URL = '';
+const SHEET_PW_KEY = 'nameTagGenerator.sheetPassword', SHEET_CACHE_KEY = 'nameTagGenerator.sheetCache';
+let cloudProblem = '';                     // '', 'password', 'wrongpw', 'offline' or 'setup': shown on the who screen
+const sheetPassword = () => { try { return localStorage.getItem(SHEET_PW_KEY) || ''; } catch (e) { return ''; } };
+function sheetDb(url) {
+  let docs = null, listener = null, onErr = null, timer = 0, busy = false, writes = 0, writing = 0;
+  const fail = code => Object.assign(new Error(code), { code });
+  async function call(body) {
+    if (!sheetPassword()) throw fail('password');
+    let res, j = null;
+    try {
+      res = await fetch(url, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(Object.assign({ key: sheetPassword() }, body)) });
+      j = await res.json();
+    } catch (e) { throw fail('unavailable'); }
+    if (!j || !j.ok) throw fail(j && (j.error === 'password' || j.error === 'setup') ? j.error : 'unavailable');
+    return j;
+  }
+  const snapDoc = (id, d) => ({ id, data: () => d, metadata: { hasPendingWrites: false } });
+  function emit(next, first) {
+    const prev = docs || {}, changes = [];
+    docs = next;
+    try { localStorage.setItem(SHEET_CACHE_KEY, JSON.stringify(next)); } catch (e) {}
+    Object.keys(next).forEach(id => {
+      if (!prev[id]) changes.push({ type: 'added', doc: snapDoc(id, next[id]) });
+      else if (JSON.stringify(prev[id]) !== JSON.stringify(next[id])) changes.push({ type: 'modified', doc: snapDoc(id, next[id]) });
+    });
+    Object.keys(prev).forEach(id => { if (!next[id]) changes.push({ type: 'removed', doc: snapDoc(id, prev[id]) }); });
+    if (listener && (first || changes.length)) listener({ docs: Object.keys(next).map(id => snapDoc(id, next[id])), docChanges: () => changes });
+  }
+  async function refresh() {
+    clearTimeout(timer);
+    if (busy || !listener) return;
+    busy = true;
+    const seq = writes;
+    try {
+      const j = await call({ action: 'list' });
+      const had = cloudProblem; cloudProblem = '';
+      if (seq === writes && !writing) emit(j.docs || {}, docs === null || !!had); // a save finished meanwhile: wait for the next look
+    } catch (e) {
+      // No internet: carry on with what this computer saw last; saves wait until it's back.
+      let cached = null;
+      try { cached = JSON.parse(localStorage.getItem(SHEET_CACHE_KEY) || 'null'); } catch (x) {}
+      if (docs === null && e.code === 'unavailable' && cached && typeof cached === 'object') emit(cached, true);
+      if (onErr) onErr(e);
+    }
+    busy = false;
+    if (!document.hidden) timer = setTimeout(refresh, 30000);
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+  async function write(body, apply) {
+    writes++; writing++;
+    try { await call(body); } finally { writing--; }
+    const next = Object.assign({}, docs || {}); apply(next); emit(next);
+  }
+  return {
+    refresh,
+    collection: () => ({ onSnapshot(cb, err) { listener = cb; onErr = err; refresh(); } }),
+    doc(path) {
+      const id = path.split('/')[1];
+      return {
+        set: d => write({ action: 'set', id, doc: d }, next => { next[id] = d; }),
+        delete: () => write({ action: 'delete', id }, next => { delete next[id]; }),
+      };
+    },
+  };
+}
+// Online saving needs the password (again): sign out, keeping unsaved changes until it's typed in.
+function needPassword(wrong) {
+  cloudProblem = wrong ? 'wrongpw' : 'password';
+  if (currentId) signOut(); else showWho();
+}
+function setPassword(pw) {
+  try { localStorage.setItem(SHEET_PW_KEY, pw); } catch (e) {}
+  cloudProblem = 'checking'; renderWho();
+  cloud.refresh();
+  if (Object.keys(cloudQueue).length) { clearTimeout(cloudTimer); cloudTimer = setTimeout(cloudFlush, 1500); }
+}
+
 function load() {
   let g = null;
   try { g = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) {}
@@ -601,7 +689,7 @@ function load() {
   syncUI(); showWho();
   // Online, the page's database answers within a moment; as a plain file there is none.
   const use = window.claude && typeof window.claude.use === 'function' ? window.claude.use('db') : Promise.resolve(null);
-  Promise.resolve(use).catch(() => null).then(db => db ? startCloud(db) : startLocal());
+  Promise.resolve(use).catch(() => null).then(db => db ? startCloud(db) : SHEET_URL ? startCloud(sheetDb(SHEET_URL)) : startLocal());
 }
 function resumeSession() {
   let cur = null;
@@ -634,7 +722,12 @@ function startCloud(db) {
     });
     if (!document.getElementById('who').hidden) renderWho();
     updateWhoBtn();
-  }, () => { setSync('error'); });
+  }, e => {
+    const code = e && e.code;
+    if (code === 'password') { needPassword(cloudProblem === 'checking' || !!sheetPassword()); return; }
+    if (!cloudReady) { cloudProblem = code === 'setup' ? 'setup' : 'offline'; renderWho(); return; }
+    setSync('error');
+  });
 }
 
 function openProfile(id) {
@@ -748,6 +841,28 @@ function renderWho(message) {
   const top = `<div class="who-top"><h2>${L("Who's making name tags?", '누가 이름표를 만드나요?')}</h2>
     <button class="small" onclick="toggleLang()" title="${isKo() ? 'View in English' : '한국어로 보기'}">${isKo() ? 'EN' : '한'}</button></div>` +
     (message ? `<p class="msg ok">${esc(message)}</p>` : '');
+  if (['password', 'wrongpw', 'checking'].includes(cloudProblem)) {
+    box.innerHTML = `<div class="who-card">${top}
+      <h3>${L('School password', '학교 비밀번호')}</h3>
+      <p class="hint">${L('Classes are saved online, so they are there on every computer. Type the school password once on this computer. Ask the person who looks after this tool if you don\'t know it.',
+        '반 목록은 온라인에 저장되어 어느 컴퓨터에서든 열 수 있습니다. 이 컴퓨터에서 학교 비밀번호를 한 번만 입력하세요. 모르면 이 도구를 관리하는 분께 물어보세요.')}</p>
+      <form id="who-pw" class="who-form">
+        <input type="password" id="pw-box" placeholder="${L('School password', '학교 비밀번호')}" autocomplete="current-password">
+        <button class="primary">${L('OK', '확인')}</button></form>
+      <p class="who-err" id="who-err">${cloudProblem === 'wrongpw' ? L('That password is not right. Try again.', '비밀번호가 맞지 않습니다. 다시 입력하세요.')
+        : cloudProblem === 'checking' ? L('Checking…', '확인 중…') : ''}</p>
+      <p class="copyright">Made by Joseph McLaren</p></div>`;
+    document.getElementById('pw-box').focus();
+    return;
+  }
+  if (!cloudReady && (cloudProblem === 'offline' || cloudProblem === 'setup')) {
+    box.innerHTML = `<div class="who-card">${top}<p class="msg err">${cloudProblem === 'setup'
+        ? L('Online saving is not finished being set up: the password in the Google Sheet still needs to be changed.', '온라인 저장 설정이 끝나지 않았습니다. Google 시트의 비밀번호를 바꿔야 합니다.')
+        : L("Can't reach the online save. Check the internet, then try again.", '온라인 저장소에 연결할 수 없습니다. 인터넷을 확인하고 다시 해 보세요.')}</p>
+      <button class="primary" data-act="retry">${L('Try again', '다시 시도')}</button>
+      <p class="copyright">Made by Joseph McLaren</p></div>`;
+    return;
+  }
   if (!cloudReady) {
     box.innerHTML = `<div class="who-card">${top}<p class="hint">${L('Loading teachers…', '선생님 목록을 불러오는 중…')}</p>
       <p class="copyright">Made by Joseph McLaren</p></div>`;
@@ -802,6 +917,7 @@ async function uploadLocal() {
 }
 document.getElementById('who').addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
+  if (b.dataset.act === 'retry') { cloudProblem = ''; renderWho(); cloud.refresh(); return; }
   if (b.dataset.act === 'upload') { b.disabled = true; await uploadLocal(); renderWho(); return; }
   const p = profiles.find(x => x.id === b.dataset.id);
   if (!p) return;
@@ -813,6 +929,11 @@ document.getElementById('who').addEventListener('click', async e => {
 });
 document.getElementById('who').addEventListener('submit', async e => {
   e.preventDefault();
+  if (e.target.id === 'who-pw') {
+    const pw = document.getElementById('pw-box').value.trim();
+    if (pw) setPassword(pw); else document.getElementById('pw-box').focus();
+    return;
+  }
   if (!cloudReady) return;
   const name = clean(document.getElementById('new-name').value);
   if (!name) { whoErr(L('Type your name first.', '먼저 이름을 입력하세요.')); return; }
