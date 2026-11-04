@@ -309,8 +309,33 @@
   html.dark #tour-tip h3 { color: #f2b8a6; }
   html.dark #tour-tip .tour-next { background: var(--cream); color: var(--maroon); border-color: var(--cream); }
 
+  /* "All done" button: appears in the header after printing; clicking it throws confetti and shows a cheer. */
+  #yay-btn { background: rgba(251,237,197,.12); color: var(--cream); border: 1px solid rgba(251,237,197,.5); border-radius: 999px; padding: 6px 13px; font-weight: bold;
+    animation: yay-in .5s ease-out; }
+  #yay-btn:hover { background: rgba(251,237,197,.24); }
+  #yay-btn .yay-emoji { display: inline-block; transform-origin: 50% 80%; animation: yay-wiggle 5s ease-in-out .6s infinite; }
+  html.dark #yay-btn { background: rgba(251,237,197,.1); color: var(--cream); border-color: rgba(251,237,197,.4); }
+  html.dark #yay-btn:hover { background: rgba(251,237,197,.2); }
+  @keyframes yay-in { from { opacity: 0; transform: scale(.6); } 70% { transform: scale(1.08); } to { opacity: 1; transform: none; } }
+  @keyframes yay-wiggle { 0%, 84%, 100% { transform: rotate(0); } 88% { transform: rotate(-16deg) scale(1.15); } 92% { transform: rotate(14deg) scale(1.15); } 96% { transform: rotate(-6deg); } }
+  #confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 9600; pointer-events: none; }
+  #yay-shade { position: fixed; inset: 0; z-index: 9500; background: rgba(18, 10, 6, .35); display: flex; align-items: center; justify-content: center; padding: 16px; animation: yay-fade .25s ease-out; }
+  #yay-card { background: #fff; color: #222; border-radius: 16px; padding: 26px 28px 20px; width: min(380px, 100%); text-align: center; box-shadow: 0 18px 50px rgba(0,0,0,.35);
+    border-top: 6px solid var(--maroon); animation: yay-pop .45s cubic-bezier(.2, 1.4, .4, 1); }
+  #yay-card .yay-big { font-size: 46px; line-height: 1; }
+  #yay-card h3 { margin: 10px 0 6px; font-size: 22px; color: var(--maroon); font-family: "Arial Black", Arial, sans-serif; }
+  #yay-card p { margin: 0 0 18px; font-size: 15px; line-height: 1.5; color: #444; }
+  #yay-card button { background: var(--maroon); color: var(--cream); border-color: var(--maroon); font-weight: bold; padding: 8px 22px; }
+  html.dark #yay-card { background: #2a2925; color: var(--ink); }
+  html.dark #yay-card h3 { color: #f2b8a6; }
+  html.dark #yay-card p { color: #d2cec5; }
+  html.dark #yay-card button { background: var(--cream); color: var(--maroon); border-color: var(--cream); }
+  @keyframes yay-fade { from { opacity: 0; } }
+  @keyframes yay-pop { from { opacity: 0; transform: scale(.7) translateY(20px); } }
+  @media (prefers-reduced-motion: reduce) { #yay-btn, #yay-btn .yay-emoji, #yay-card, #yay-shade { animation: none; } }
+
   @media print {
-    #tour-shade, #tour-ring, #tour-tip, #notice, #who { display: none !important; }
+    #tour-shade, #tour-ring, #tour-tip, #notice, #who, #confetti, #yay-shade { display: none !important; }
     @page { size: A4 landscape; margin: 0; }
     body { background: #fff; }
     header, .controls, .summary, .noprint { display: none !important; }
@@ -358,6 +383,7 @@
   <button id="undo-btn" onclick="undo()" disabled data-i18n="undo" data-i18n-title="undoTitle" title="Undo the last change (Ctrl+Z)">↶ Undo</button>
   <button id="redo-btn" onclick="redo()" disabled data-i18n="redo" data-i18n-title="redoTitle" title="Redo the change you undid (Ctrl+Y)">↷ Redo</button>
   <button id="print-btn" class="primary" onclick="printOut()" data-i18n="print">Print tags</button>
+  <button id="yay-btn" onclick="celebrate()" hidden><span class="yay-emoji">🎉</span> <span data-i18n="yay">All done!</span></button>
 </header>
 
 <div id="who" hidden></div>
@@ -451,7 +477,7 @@ let nextId = 1;
 const KO = {
   title: '이름표 만들기', helpTitle: '사용법 안내',
   privacy: '🔒 공용 컴퓨터: 반 목록은 내 이름으로 저장됩니다. 다 쓰면 위의 <b>바꾸기</b>를 누르세요. 30분 동안 사용하지 않아도 자동으로 로그아웃됩니다.',
-  print: '이름표 인쇄', undo: '↶ 되돌리기', undoTitle: '마지막 변경 되돌리기 (Ctrl+Z)', redo: '↷ 다시 하기', redoTitle: '되돌린 변경 다시 하기 (Ctrl+Y)',
+  print: '이름표 인쇄', yay: '다 했어요!', undo: '↶ 되돌리기', undoTitle: '마지막 변경 되돌리기 (Ctrl+Z)', redo: '↷ 다시 하기', redoTitle: '되돌린 변경 다시 하기 (Ctrl+Y)',
   d1: '1. 기본 정보',
   teacherLbl: '내 이름 (이름표 오른쪽 아래)', teacherPh: '예: Eugene',
   schoolLbl: '학원 이름 (왼쪽 아래)',
@@ -749,7 +775,7 @@ function signOut(message) {
   currentId = null;
   try { sessionStorage.removeItem(CURRENT_KEY); } catch (e) {}
   state = freshState(); activeId = null; resetUndo();
-  syncUI(); hideNotice(); showWho(message); setSync(syncState);
+  syncUI(); hideNotice(); hideYay(); showWho(message); setSync(syncState);
 }
 
 // Put the signed-in teacher's settings into the page.
@@ -1793,15 +1819,88 @@ async function printOut() {
     if (!e || e.code !== 'declined') showMsg(L('Could not save the print file. Try again in a moment.', '인쇄 파일을 저장하지 못했습니다. 잠시 후 다시 해 보세요.'));
     return;
   }
+  showYay();
   showNotice(L('<b>Print file saved.</b> Open it from your downloads and it will print. Done? Sign out so the next teacher can\'t see your classes.',
     '<b>인쇄 파일을 저장했습니다.</b> 다운로드에서 열면 인쇄됩니다. 다 끝났나요? 다음 선생님이 내 반 목록을 보지 않도록 로그아웃하세요.'),
     [[L('Sign out', '로그아웃'), () => signOut()], [L('Not yet', '나중에'), hideNotice]], 'print');
 }
 window.addEventListener('afterprint', () => {
   if (!currentId) return;
+  showYay();
   setTimeout(() => showNotice(L("<b>Finished printing?</b> Sign out so the next teacher can't see your classes. They stay saved for next time.", '<b>인쇄가 끝났나요?</b> 다음 선생님이 내 반 목록을 보지 않도록 로그아웃하세요. 반 목록은 다음을 위해 저장됩니다.'),
     [[L('Sign out', '로그아웃'), () => signOut()], [L('Not yet', '나중에'), hideNotice]], 'print'), 300);
 });
+
+/* The "All done!" button. It shows in the header once the tags have gone to the printer (or the print
+   file was saved) and stays until the teacher signs out. Clicking it sprays confetti and shows a cheer. */
+function showYay() { const b = document.getElementById('yay-btn'); if (b) b.hidden = false; }
+function hideYay() { const b = document.getElementById('yay-btn'); if (b) b.hidden = true; closeYay(); }
+const CHEERS = [
+  ['Great job{n}!', '{n}잘하셨어요!', 'Your name tags are ready. Your students are going to love them.', '이름표가 준비되었어요. 학생들이 정말 좋아할 거예요.'],
+  ['You did it{n}!', '{n}해냈어요!', 'Every book now knows exactly who it belongs to.', '이제 모든 책이 주인을 찾았어요.'],
+  ['Wonderful work{n}!', '{n}정말 멋져요!', 'All finished. Time for a well-earned coffee break. ☕', '다 끝났어요. 커피 한 잔의 여유를 즐기세요. ☕'],
+  ['All done{n}!', '{n}수고하셨어요!', 'Thank you for all the care you put into your classes.', '반을 위해 정성을 쏟아 주셔서 감사해요.'],
+  ['Amazing{n}!', '{n}최고예요!', 'Neat tags, happy students, organised books. Nicely done!', '깔끔한 이름표, 행복한 학생들, 정리된 책들. 아주 잘하셨어요!'],
+];
+let lastCheer = -1;
+function celebrate() {
+  closeYay();
+  let i; do { i = Math.floor(Math.random() * CHEERS.length); } while (i === lastCheer && CHEERS.length > 1);
+  lastCheer = i;
+  const c = CHEERS[i], name = (state.teacher || '').trim();
+  const title = isKo() ? c[1].replace('{n}', name ? name + ' 선생님, ' : '') : c[0].replace('{n}', name ? ', ' + name : '');
+  const shade = document.createElement('div');
+  shade.id = 'yay-shade';
+  shade.innerHTML = `<div id="yay-card" role="dialog" aria-modal="true" aria-labelledby="yay-title"><div class="yay-big">🎉</div>` +
+    `<h3 id="yay-title">${esc(title)}</h3><p>${esc(L(c[2], c[3]))}</p><button type="button">${esc(L('Thanks!', '고마워요!'))}</button></div>`;
+  shade.addEventListener('click', e => { if (e.target === shade || e.target.tagName === 'BUTTON') closeYay(); });
+  document.body.appendChild(shade);
+  shade.querySelector('button').focus();
+  const r = document.getElementById('yay-btn').getBoundingClientRect();
+  confetti(r.width ? r.left + r.width / 2 : innerWidth / 2, r.width ? r.bottom : 60);
+}
+function closeYay() { const s = document.getElementById('yay-shade'); if (s) s.remove(); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeYay(); });
+
+// Confetti drawn on a full-window canvas: one burst from the button, plus two side cannons.
+function confetti(bx, by) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const old = document.getElementById('confetti'); if (old) old.remove();
+  const cv = document.createElement('canvas'); cv.id = 'confetti';
+  const dpr = Math.min(devicePixelRatio || 1, 2), W = innerWidth, H = innerHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  document.body.appendChild(cv);
+  const ctx = cv.getContext('2d'); ctx.scale(dpr, dpr);
+  const colors = ['#7A1701', '#FBEDC5', '#2D3A65', '#E9BFA5', '#F4B400', '#2BB3A3', '#EF6F9B', '#6DA8FF'];
+  const parts = [];
+  const add = (x, y, n, angle, spread, speed) => {
+    for (let k = 0; k < n; k++) {
+      const a = angle + (Math.random() - .5) * spread, v = speed * (.55 + Math.random() * .6);
+      parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, w: 6 + Math.random() * 6, h: 4 + Math.random() * 6,
+        r: Math.random() * 6.3, vr: (Math.random() - .5) * .35, c: colors[k % colors.length], round: Math.random() < .25,
+        sway: Math.random() * 6.3 });
+    }
+  };
+  add(bx, by, 90, Math.PI / 2, Math.PI * 1.6, 13);           // from the button
+  add(0, H * .75, 70, -Math.PI / 3, .7, 22);                  // bottom-left cannon
+  add(W, H * .75, 70, -Math.PI * 2 / 3, .7, 22);              // bottom-right cannon
+  const start = performance.now();
+  (function frame(t) {
+    const age = t - start;
+    ctx.clearRect(0, 0, W, H);
+    for (const p of parts) {
+      p.vy += .32; p.vx *= .985; p.vy *= .985; p.sway += .08;
+      p.x += p.vx + Math.sin(p.sway) * .8; p.y += p.vy; p.r += p.vr;
+      ctx.globalAlpha = age > 3200 ? Math.max(0, 1 - (age - 3200) / 800) : 1;
+      ctx.fillStyle = p.c;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+      if (p.round) { ctx.beginPath(); ctx.arc(0, 0, p.h / 2, 0, 6.3); ctx.fill(); }
+      else ctx.fillRect(-p.w / 2, -p.h / 2 * Math.abs(Math.cos(p.sway)), p.w, p.h * Math.abs(Math.cos(p.sway)) + 1);
+      ctx.restore();
+    }
+    if (age < 4000 && cv.isConnected) requestAnimationFrame(frame); else cv.remove();
+  })(start);
+}
 
 // Link the class list and the preview: editing a class scrolls its tags into view and highlights
 // them; clicking a tag jumps back to its class.
