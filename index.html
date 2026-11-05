@@ -319,20 +319,30 @@
   @keyframes yay-in { from { opacity: 0; transform: scale(.6); } 70% { transform: scale(1.08); } to { opacity: 1; transform: none; } }
   @keyframes yay-wiggle { 0%, 84%, 100% { transform: rotate(0); } 88% { transform: rotate(-16deg) scale(1.15); } 92% { transform: rotate(14deg) scale(1.15); } 96% { transform: rotate(-6deg); } }
   #confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 9600; pointer-events: none; }
-  #yay-shade { position: fixed; inset: 0; z-index: 9500; background: rgba(18, 10, 6, .35); display: flex; align-items: center; justify-content: center; padding: 16px; animation: yay-fade .25s ease-out; }
-  #yay-card { background: #fff; color: #222; border-radius: 16px; padding: 26px 28px 20px; width: min(380px, 100%); text-align: center; box-shadow: 0 18px 50px rgba(0,0,0,.35);
-    border-top: 6px solid var(--maroon); animation: yay-pop .45s cubic-bezier(.2, 1.4, .4, 1); }
-  #yay-card .yay-big { font-size: 46px; line-height: 1; }
-  #yay-card h3 { margin: 10px 0 6px; font-size: 22px; color: var(--maroon); font-family: "Arial Black", Arial, sans-serif; }
-  #yay-card p { margin: 0 0 18px; font-size: 15px; line-height: 1.5; color: #444; }
-  #yay-card button { background: var(--maroon); color: var(--cream); border-color: var(--maroon); font-weight: bold; padding: 8px 22px; }
-  html.dark #yay-card { background: #2a2925; color: var(--ink); }
-  html.dark #yay-card h3 { color: #f2b8a6; }
-  html.dark #yay-card p { color: #d2cec5; }
-  html.dark #yay-card button { background: var(--cream); color: var(--maroon); border-color: var(--cream); }
+  /* The cheer: a big, bold card that fills most of the screen, with sun rays turning behind it. */
+  #yay-shade { position: fixed; inset: 0; z-index: 9500; background: rgba(18, 10, 6, .6); display: flex; align-items: center; justify-content: center; padding: 4vh 4vw; animation: yay-fade .25s ease-out; cursor: pointer; }
+  #yay-card { position: relative; overflow: hidden; width: min(88vw, 1150px); height: min(80vh, 760px); border-radius: 28px; cursor: default;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(10px, 2.2vh, 26px); padding: 4vh 5vw; text-align: center;
+    background: radial-gradient(circle at 50% 42%, #B3260A 0%, #7A1701 55%, #4d1405 100%); color: var(--cream);
+    box-shadow: 0 30px 90px rgba(0,0,0,.55), inset 0 0 0 6px rgba(251,237,197,.35); animation: yay-pop .7s cubic-bezier(.18, 1.5, .4, 1); }
+  #yay-card::before { content: ""; position: absolute; left: 50%; top: 42%; width: 260vmax; height: 260vmax; margin: -130vmax 0 0 -130vmax; pointer-events: none;
+    background: repeating-conic-gradient(rgba(247,183,49,.16) 0deg 10deg, transparent 10deg 20deg); animation: yay-spin 40s linear infinite; }
+  #yay-card > * { position: relative; }
+  #yay-card .yay-big { font-size: clamp(70px, 17vmin, 180px); line-height: 1; animation: yay-bounce 1.6s ease-in-out .7s infinite; }
+  #yay-card h3 { margin: 0; font-size: clamp(34px, 7.5vmin, 96px); line-height: 1.05; color: #FFE066; font-family: "Arial Black", Arial, "Malgun Gothic", sans-serif;
+    text-shadow: 0 4px 0 rgba(0,0,0,.25); overflow-wrap: anywhere; }
+  #yay-card p { margin: 0; max-width: 30ch; font-size: clamp(18px, 3.4vmin, 34px); line-height: 1.4; color: var(--cream); }
+  #yay-card button { margin-top: clamp(4px, 1.5vh, 16px); background: #FFE066; color: #5a1201; border: 0; font-weight: bold; font-size: clamp(17px, 2.8vmin, 26px);
+    padding: .6em 1.8em; border-radius: 999px; box-shadow: 0 6px 0 #c9a02a; }
+  #yay-card button:hover { background: #fff0a0; }
+  #yay-card button:active { transform: translateY(3px); box-shadow: 0 3px 0 #c9a02a; }
+  html.dark #yay-card { color: var(--cream); }
+  html.dark #yay-card button { background: #FFE066; color: #5a1201; }
   @keyframes yay-fade { from { opacity: 0; } }
-  @keyframes yay-pop { from { opacity: 0; transform: scale(.7) translateY(20px); } }
-  @media (prefers-reduced-motion: reduce) { #yay-btn, #yay-btn .yay-emoji, #yay-card, #yay-shade { animation: none; } }
+  @keyframes yay-pop { from { opacity: 0; transform: scale(.3) rotate(-6deg); } }
+  @keyframes yay-spin { to { transform: rotate(360deg); } }
+  @keyframes yay-bounce { 0%, 100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(-14px) rotate(-8deg); } 60% { transform: translateY(0) rotate(6deg); } }
+  @media (prefers-reduced-motion: reduce) { #yay-btn, #yay-btn .yay-emoji, #yay-card, #yay-card::before, #yay-card .yay-big, #yay-shade { animation: none; } }
 
   @media print {
     #tour-shade, #tour-ring, #tour-tip, #notice, #who, #confetti, #yay-shade { display: none !important; }
@@ -1856,8 +1866,7 @@ function celebrate() {
   shade.addEventListener('click', e => { if (e.target === shade || e.target.tagName === 'BUTTON') closeYay(); });
   document.body.appendChild(shade);
   shade.querySelector('button').focus();
-  const r = document.getElementById('yay-btn').getBoundingClientRect();
-  confetti(r.width ? r.left + r.width / 2 : innerWidth / 2, r.width ? r.bottom : 60);
+  confetti(innerWidth / 2, innerHeight * .4);
 }
 function closeYay() { const s = document.getElementById('yay-shade'); if (s) s.remove(); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeYay(); });
@@ -1876,14 +1885,15 @@ function confetti(bx, by) {
   const add = (x, y, n, angle, spread, speed) => {
     for (let k = 0; k < n; k++) {
       const a = angle + (Math.random() - .5) * spread, v = speed * (.55 + Math.random() * .6);
-      parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, w: 6 + Math.random() * 6, h: 4 + Math.random() * 6,
-        r: Math.random() * 6.3, vr: (Math.random() - .5) * .35, c: colors[k % colors.length], round: Math.random() < .25,
+      parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, w: 8 + Math.random() * 8, h: 5 + Math.random() * 8,
+        r: Math.random() * 6.3, vr: (Math.random() - .5) * .35, c: colors[Math.floor(Math.random() * colors.length)], round: Math.random() < .25,
         sway: Math.random() * 6.3 });
     }
   };
-  add(bx, by, 90, Math.PI / 2, Math.PI * 1.6, 13);           // from the button
-  add(0, H * .75, 70, -Math.PI / 3, .7, 22);                  // bottom-left cannon
-  add(W, H * .75, 70, -Math.PI * 2 / 3, .7, 22);              // bottom-right cannon
+  add(bx, by, 160, 0, Math.PI * 2, 17);                       // a burst from the middle
+  add(0, H * .85, 110, -Math.PI / 3, .8, 26);                 // bottom-left cannon
+  add(W, H * .85, 110, -Math.PI * 2 / 3, .8, 26);             // bottom-right cannon
+  setTimeout(() => { for (let k = 0; k < 140; k++) add(Math.random() * W, -20 - Math.random() * 120, 1, Math.PI / 2, .6, 3); }, 500); // then a shower from the top
   const start = performance.now();
   (function frame(t) {
     const age = t - start;
@@ -1891,14 +1901,14 @@ function confetti(bx, by) {
     for (const p of parts) {
       p.vy += .32; p.vx *= .985; p.vy *= .985; p.sway += .08;
       p.x += p.vx + Math.sin(p.sway) * .8; p.y += p.vy; p.r += p.vr;
-      ctx.globalAlpha = age > 3200 ? Math.max(0, 1 - (age - 3200) / 800) : 1;
+      ctx.globalAlpha = age > 4400 ? Math.max(0, 1 - (age - 4400) / 800) : 1;
       ctx.fillStyle = p.c;
       ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
       if (p.round) { ctx.beginPath(); ctx.arc(0, 0, p.h / 2, 0, 6.3); ctx.fill(); }
       else ctx.fillRect(-p.w / 2, -p.h / 2 * Math.abs(Math.cos(p.sway)), p.w, p.h * Math.abs(Math.cos(p.sway)) + 1);
       ctx.restore();
     }
-    if (age < 4000 && cv.isConnected) requestAnimationFrame(frame); else cv.remove();
+    if (age < 5200 && cv.isConnected) requestAnimationFrame(frame); else cv.remove();
   })(start);
 }
 
