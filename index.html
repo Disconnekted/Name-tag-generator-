@@ -113,6 +113,7 @@
   .picklist label input { margin: 0; }
   .picklist select { width: auto; padding: 0 2px; font-size: 12px; margin-left: auto; }
   .picklist .none { font-size: 12.5px; color: var(--muted); }
+  .row > .timebox { flex: 0 0 34%; }
   .dayhead { display: flex; align-items: flex-end; gap: 4px; }
   .dayhead label { flex: 1; }
   .dayhead .daychip { font-size: 11px; padding: 1px 6px; margin-bottom: 3px; white-space: nowrap; }
@@ -455,7 +456,7 @@
         <label><input type="radio" name="printmode" value="reprint"><span data-i18n="reprint">Reprint some students</span></label>
       </div>
       <p class="hint" id="reprint-hint" hidden data-i18n="reprintHint">Tick the students who need a new tag (a new student, or a lost tag). Only those tags print, packed together on as few pages as possible. Need two of someone? Change ×1 to ×2 next to their name. <a href="#" onclick="clearPicks();return false">Untick everyone</a></p>
-      <p class="hint" data-i18n="hint3">Pick the subject and days, and untick classes you don't need. Use ×2 or ×3 next to a class to print extra copies of each tag. Names come from TOPIA. A student missing? Type their name in the box under the class and click Add.</p>
+      <p class="hint" data-i18n="hint3">Pick the subject and days (add a class time if you like, it prints before the days), and untick classes you don't need. Use ×2 or ×3 next to a class to print extra copies of each tag. Names come from TOPIA. A student missing? Type their name in the box under the class and click Add.</p>
       <datalist id="subjects">
         <option>Debate</option><option>Grammar</option><option>Integrated</option><option>Language Arts</option>
         <option>Phonics</option><option>Speaking</option><option>Writing</option>
@@ -509,7 +510,7 @@ const KO = {
   d3: '3. 반별 확인',
   printAll: '모든 반 인쇄', reprint: '일부 학생만 다시 인쇄',
   reprintHint: '새 이름표가 필요한 학생(새 학생, 잃어버린 이름표)을 체크하세요. 체크한 이름표만 최대한 적은 장수에 모아 인쇄됩니다. 두 장이 필요하면 이름 옆의 ×1을 ×2로 바꾸세요. <a href="#" onclick="clearPicks();return false">모두 체크 해제</a>',
-  hint3: '과목과 요일을 고르고, 필요 없는 반은 체크를 해제하세요. 반 옆의 ×2, ×3으로 이름표를 여러 장 인쇄할 수 있습니다. 이름은 TOPIA에서 가져옵니다. 빠진 학생이 있으면 반 아래 칸에 이름을 입력하고 추가를 누르세요.',
+  hint3: '과목과 요일을 고르고 (원하면 수업 시간도 넣으세요. 요일 앞에 인쇄됩니다), 필요 없는 반은 체크를 해제하세요. 반 옆의 ×2, ×3으로 이름표를 여러 장 인쇄할 수 있습니다. 이름은 TOPIA에서 가져옵니다. 빠진 학생이 있으면 반 아래 칸에 이름을 입력하고 추가를 누르세요.',
 };
 const isKo = () => state.lang === 'ko';
 const L = (en, ko) => isKo() ? ko : en;
@@ -1024,7 +1025,7 @@ function showMsg(text, ok) {
 }
 
 function newClass(name) {
-  return { id: nextId++, name: name || '', subject: '', days: '', teacher: '', include: true, copies: 1, names: [] };
+  return { id: nextId++, name: name || '', subject: '', time: '', days: '', teacher: '', include: true, copies: 1, names: [] };
 }
 
 /* ---------- class colours ----------
@@ -1430,6 +1431,7 @@ function renderClasses() {
         <span class="nb-btns"><button class="small" data-act="ticknew">${L('Reprint these', '이 학생들 인쇄')}</button><button class="small" data-act="dismissnew">${L('Dismiss', '닫기')}</button></span></div>` : ''}
       <div class="row">
         <div><label>${L('Subject', '과목')}<span class="dotwrap">${subDot(c)}</span></label>${subjectHTML(c)}</div>
+        <div class="timebox"><label>${L('Time (optional)', '시간 (선택)')}</label><input type="text" data-f="time" value="${esc(c.time || '')}" placeholder="${L('e.g. 4:00', '예: 4:00')}"></div>
       </div>
       <div class="row">
         <div><div class="dayhead"><label>${L('Days', '요일')}</label>${DAY_CHOICES.map(d => `<button class="small daychip${clean(c.days) === d ? ' on' : ''}" data-act="days" data-v="${d}">${d}</button>`).join('')}</div>
@@ -1678,9 +1680,10 @@ function tagHTML(c, name, ci) {
   const cls = [c.name, c.subject].filter(Boolean).join(' ');
   const teacher = clean(c.teacher) || clean(state.teacher);
   const n = nameHTML(name);
+  const when = [clean(c.time), clean(c.days)].filter(Boolean).join(' '); // time first, e.g. "4:00 Mon / Wed"; time is optional
   const inner = `
     <div class="name" style="font-size:${nameSize(n.text)}pt">${n.html}</div>
-    <div class="mid" style="font-size:${midSize(cls, c.days)}pt"><span>${esc(cls)}</span><span>${esc(c.days)}</span></div>
+    <div class="mid" style="font-size:${midSize(cls, when)}pt"><span>${esc(cls)}</span><span>${esc(when)}</span></div>
     <div class="foot"><span class="school">${esc(state.style === 'topia' ? state.school.replace(/^TOPIA$/i, 'TOPIΛ') : state.school)}</span><span class="teacher">${esc(teacher)}</span></div>`;
   const cc = classColor(c);
   const attrs = `data-cid="${c.id}" class="tag${cc ? ' cc' : ''}${c.id === activeId ? ' active' : ''}"` +
@@ -1966,8 +1969,8 @@ const TOUR = [
     en: ['2. Add your students', 'Drag the red Copy students button to your bookmarks bar once. After that, click it on the TOPIA attendance page, come back, and press Ctrl+V in the box here.'],
     ko: ['2. 학생 추가', '빨간 학생 복사 버튼을 북마크바로 한 번만 끌어다 놓으세요. 그다음부터는 TOPIA 출석 페이지에서 누르고, 돌아와서 여기 칸에 Ctrl+V를 누르면 됩니다.'] },
   { sel: ['#classes .class-card', '#p-check'],
-    en: ['3. Check each class', 'Every class gets a box. Fill in the subject and click Mon / Wed or Tues / Thurs (or type the days). Untick a class to leave it out, or pick ×2 / ×3 for extra copies.'],
-    ko: ['3. 반별 확인', '반마다 상자가 하나씩 생깁니다. 과목을 넣고 Mon / Wed나 Tues / Thurs를 누르거나 직접 입력하세요. 체크를 해제하면 그 반은 빠지고, ×2 / ×3으로 여러 장 인쇄할 수 있습니다.'] },
+    en: ['3. Check each class', 'Every class gets a box. Fill in the subject and click Mon / Wed or Tues / Thurs (or type the days). Add a class time if you like; it prints before the days. Untick a class to leave it out, or pick ×2 / ×3 for extra copies.'],
+    ko: ['3. 반별 확인', '반마다 상자가 하나씩 생깁니다. 과목을 넣고 Mon / Wed나 Tues / Thurs를 누르거나 직접 입력하세요. 수업 시간은 선택이며 요일 앞에 인쇄됩니다. 체크를 해제하면 그 반은 빠지고, ×2 / ×3으로 여러 장 인쇄할 수 있습니다.'] },
   { sel: '.print-mode',
     en: ['Only need a few tags?', 'Switch to Reprint some students and tick just the ones who need a new tag. When you import a class again, new students are flagged for you.'],
     ko: ['몇 장만 필요할 때', '일부 학생만 다시 인쇄로 바꾸고 새 이름표가 필요한 학생만 체크하세요. 반 명단을 다시 가져오면 새 학생이 자동으로 표시됩니다.'] },
