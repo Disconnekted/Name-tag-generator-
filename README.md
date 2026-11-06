@@ -11,3 +11,5 @@ Made by Joseph McLaren.
 - Can be installed as a desktop app from Chrome or Edge (Install icon in the address bar).
 
 Everything runs in the browser. Class lists are never uploaded to this repository; online, they go only to the school's own Google Sheet, behind the school password.
+
+Looking after the tool: see [HANDOVER.md](HANDOVER.md).
