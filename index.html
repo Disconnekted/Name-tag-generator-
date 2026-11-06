@@ -1103,6 +1103,7 @@ const COLS = {
   kor: [/한글\s*이름|국문\s*이름|한국\s*이름|korean/i, /^(학생\s*)?(이름|성명|학생명)$/],
   cls: [/^반\s*명$|^반$|반\s*이름|^클래스$|^수업\s*명$/, /^class(\s*name)?$/i],
   subj: [/^subject$/i, /^과목(\s*명)?$/],
+  time: [/^(class\s*)?time$/i, /^(수업\s*)?시간$/],
 };
 const NAME_PAIR = /^(.*?[A-Za-z].*?)\s*[(（]\s*([ㄱ-힣][ㄱ-힣\s]*)\s*[)）]$/;
 const CLASS_TOKEN = /([A-Za-z]{1,3}\d+[_-]\d+(?:\([^)]*\))?)/;
@@ -1114,6 +1115,7 @@ function parseRows(rows) {
   rows = rows.map(r => (r || []).map(clean));
   const groups = new Map();
   groups.subjects = new Map();
+  groups.times = new Map();
   const add = (className, name) => {
     if (!groups.has(className)) groups.set(className, []);
     if (name !== undefined) groups.get(className).push(name);
@@ -1123,13 +1125,13 @@ function parseRows(rows) {
     rows.forEach(r => { const n = r.find(c => c); if (n && !/^▶/.test(n)) add('', n); });
     return groups;
   }
-  let eng = -1, kor = -1, cls = -1, subj = -1, current = '';
+  let eng = -1, kor = -1, cls = -1, subj = -1, time = -1, current = '';
   for (const r of rows) {
     const filled = r.filter(c => c);
     if (!filled.length) continue;
     // A header row (each pasted table may have its own) tells us which columns hold what.
     if (isHeader(r)) {
-      eng = findCol(r, COLS.eng); kor = findCol(r, COLS.kor); cls = findCol(r, COLS.cls); subj = findCol(r, COLS.subj);
+      eng = findCol(r, COLS.eng); kor = findCol(r, COLS.kor); cls = findCol(r, COLS.cls); subj = findCol(r, COLS.subj); time = findCol(r, COLS.time);
       if (eng === kor) kor = -1;
       if (kor < 0) kor = r.findIndex((c, i) => i !== eng && /^(student\s*)?name$|^korean/i.test(c)); // e.g. Name next to English Name
       continue;
@@ -1140,6 +1142,7 @@ function parseRows(rows) {
     if (sec) { const t = sec[1].match(CLASS_TOKEN); current = t ? t[1] : clean(sec[1]).split(/\s+/).slice(0, 2).join(' '); continue; }
     const rowClass = cls >= 0 && r[cls] ? r[cls] : current;
     if (subj >= 0 && r[subj] && rowClass) groups.subjects.set(rowClass, r[subj]);
+    if (time >= 0 && r[time] && rowClass) groups.times.set(rowClass, r[time]);
     if (eng < 0 && kor < 0) { if (cls >= 0 && CLASS_TOKEN.test(rowClass)) add(rowClass); continue; } // class list only
     let e = eng >= 0 ? r[eng] || '' : '', k = kor >= 0 ? r[kor] || '' : '';
     // TOPIA writes names as "Sam(김시율)"; find that cell even if the header and cells don't line up.
@@ -1345,7 +1348,7 @@ function sameStudent(a, b) {
 function applyGroups(groups) {
   let students = 0;
   const fresh = [];
-  const subjects = groups.subjects || new Map();
+  const subjects = groups.subjects || new Map(), times = groups.times || new Map();
   for (const [raw, names] of groups) {
     const nm = shortClass(raw);
     let c = state.classes.find(x => x.name === nm && nm);
@@ -1363,6 +1366,8 @@ function applyGroups(groups) {
       c.names = [...names, ...keep];
     }
     if (subjects.has(raw) && !c.subject) c.subject = clean(subjects.get(raw));
+    // The class time from TOPIA's Time column fills an empty Time box (a time typed by the teacher is kept).
+    if (times.has(raw) && !clean(c.time)) c.time = classTime(times.get(raw));
     // Each pasted day adds its weekday, so Monday + Wednesday pastes give "Mon / Wed".
     if (groups.weekday !== undefined && (!c.days || c.daysAuto)) {
       c.weekdays = [...new Set([...(c.weekdays || []), groups.weekday])].sort((a, b) => (a || 7) - (b || 7));
@@ -1383,6 +1388,14 @@ function applyGroups(groups) {
     : L(`Imported ${cls} with their subjects. This list has no student names, so add them to each class below.`,
         `${n}개 반과 과목을 가져왔습니다. 이 명단에는 학생 이름이 없으니 아래 각 반에 이름을 추가하세요.`), true);
   renderClasses(); render();
+}
+
+// "16:00~16:50" or "4:00 PM - 4:50 PM" -> "4:00": the start time only, afternoon hours written the short way.
+function classTime(t) {
+  const m = String(t || '').match(/(\d{1,2})\s*[:：.]\s*(\d{2})/);
+  if (!m) return clean(t);
+  const h = +m[1];
+  return `${h > 12 ? h - 12 : h}:${m[2]}`;
 }
 
 function parseDelimited(text) {
