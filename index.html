@@ -1295,7 +1295,7 @@ function copyStudentsBookmarklet() {
         var j = await get('/' + id), info = j && j.data && j.data.info;
         if (!info || !Array.isArray(info.studentObjList)) throw new Error('no list');
         return { name: info.className || found[id], students: info.studentObjList.length,
-          count: typeof info.studentNum === 'number' ? info.studentNum : null,
+          count: null,
           lines: ['English Name\tKorean Name'].concat(info.studentObjList.map(function (s) { return clean(s.nameE) + '\t' + clean(s.nameK); })) };
       }));
       var pos = function (r) { for (var k = 0; k < buttons.length; k++) if (sameClass(buttons[k].name, r.name)) return k; return buttons.length; };
