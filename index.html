@@ -114,6 +114,7 @@
   .picklist select { width: auto; padding: 0 2px; font-size: 12px; margin-left: auto; }
   .picklist .none { font-size: 12.5px; color: var(--muted); }
   .row > .timebox { flex: 0 0 34%; }
+  .timetoggle.on { background: var(--maroon) !important; color: var(--cream) !important; border-color: var(--maroon) !important; }
   .dayhead { display: flex; align-items: flex-end; gap: 4px; }
   .dayhead label { flex: 1; }
   .dayhead .daychip { font-size: 11px; padding: 1px 6px; margin-bottom: 3px; white-space: nowrap; }
@@ -456,7 +457,7 @@
         <label><input type="radio" name="printmode" value="reprint"><span data-i18n="reprint">Reprint some students</span></label>
       </div>
       <p class="hint" id="reprint-hint" hidden data-i18n="reprintHint">Tick the students who need a new tag (a new student, or a lost tag). Only those tags print, packed together on as few pages as possible. Need two of someone? Change ×1 to ×2 next to their name. <a href="#" onclick="clearPicks();return false">Untick everyone</a></p>
-      <p class="hint" data-i18n="hint3">Pick the subject and days (add a class time if you like, it prints before the days), and untick classes you don't need. Use ×2 or ×3 next to a class to print extra copies of each tag. Names come from TOPIA. A student missing? Type their name in the box under the class and click Add.</p>
+      <p class="hint" data-i18n="hint3">Pick the subject and days (add a class time if you like, it prints before the days; the Time button turns times on or off), and untick classes you don't need. Use ×2 or ×3 next to a class to print extra copies of each tag. Names come from TOPIA. A student missing? Type their name in the box under the class and click Add.</p>
       <datalist id="subjects">
         <option>Debate</option><option>Grammar</option><option>Integrated</option><option>Language Arts</option>
         <option>Phonics</option><option>Speaking</option><option>Writing</option>
@@ -510,7 +511,7 @@ const KO = {
   d3: '3. 반별 확인',
   printAll: '모든 반 인쇄', reprint: '일부 학생만 다시 인쇄',
   reprintHint: '새 이름표가 필요한 학생(새 학생, 잃어버린 이름표)을 체크하세요. 체크한 이름표만 최대한 적은 장수에 모아 인쇄됩니다. 두 장이 필요하면 이름 옆의 ×1을 ×2로 바꾸세요. <a href="#" onclick="clearPicks();return false">모두 체크 해제</a>',
-  hint3: '과목과 요일을 고르고 (원하면 수업 시간도 넣으세요. 요일 앞에 인쇄됩니다), 필요 없는 반은 체크를 해제하세요. 반 옆의 ×2, ×3으로 이름표를 여러 장 인쇄할 수 있습니다. 이름은 TOPIA에서 가져옵니다. 빠진 학생이 있으면 반 아래 칸에 이름을 입력하고 추가를 누르세요.',
+  hint3: '과목과 요일을 고르고 (원하면 수업 시간도 넣으세요. 요일 앞에 인쇄되며, 시간 버튼으로 켜고 끕니다), 필요 없는 반은 체크를 해제하세요. 반 옆의 ×2, ×3으로 이름표를 여러 장 인쇄할 수 있습니다. 이름은 TOPIA에서 가져옵니다. 빠진 학생이 있으면 반 아래 칸에 이름을 입력하고 추가를 누르세요.',
 };
 const isKo = () => state.lang === 'ko';
 const L = (en, ko) => isKo() ? ko : en;
@@ -1444,7 +1445,7 @@ function renderClasses() {
         <span class="nb-btns"><button class="small" data-act="ticknew">${L('Reprint these', '이 학생들 인쇄')}</button><button class="small" data-act="dismissnew">${L('Dismiss', '닫기')}</button></span></div>` : ''}
       <div class="row">
         <div><label>${L('Subject', '과목')}<span class="dotwrap">${subDot(c)}</span></label>${subjectHTML(c)}</div>
-        <div class="timebox"><label>${L('Time (optional)', '시간 (선택)')}</label><input type="text" data-f="time" value="${esc(c.time || '')}" placeholder="${L('e.g. 4:00', '예: 4:00')}"></div>
+        <div class="timebox"${showTime() ? '' : ' hidden'}><label>${L('Time (optional)', '시간 (선택)')}</label><input type="text" data-f="time" value="${esc(c.time || '')}" placeholder="${L('e.g. 4:00', '예: 4:00')}"></div>
       </div>
       <div class="row">
         <div><div class="dayhead"><label>${L('Days', '요일')}</label>${DAY_CHOICES.map(d => `<button class="small daychip${clean(c.days) === d ? ' on' : ''}" data-act="days" data-v="${d}">${d}</button>`).join('')}</div>
@@ -1463,13 +1464,19 @@ function renderClasses() {
 // Above the class boxes: how many classes will print, with buttons to tick all or none.
 function renderClassBar() {
   const bar = document.getElementById('classbar'), all = state.classes.filter(c => !c.demo);
-  bar.hidden = state.reprint || all.length < 2;
+  const ticks = !state.reprint && all.length >= 2;
+  bar.hidden = !all.length;
   if (bar.hidden) return;
-  const n = all.filter(c => c.include).length;
-  bar.innerHTML = `<span>${L(`Printing <b>${n} of ${all.length}</b> classes`, `<b>${all.length}개 중 ${n}개</b> 반 인쇄`)}</span>` +
-    `<button class="small" data-all="1">${L('Tick all', '모두 체크')}</button><button class="small" data-all="0">${L('Untick all', '모두 해제')}</button>`;
+  const n = all.filter(c => c.include).length, on = showTime();
+  // "Time" is one on/off button: on, each tag shows its class time before the days; off, just the days.
+  bar.innerHTML = (ticks ? `<span>${L(`Printing <b>${n} of ${all.length}</b> classes`, `<b>${all.length}개 중 ${n}개</b> 반 인쇄`)}</span>` +
+    `<button class="small" data-all="1">${L('Tick all', '모두 체크')}</button><button class="small" data-all="0">${L('Untick all', '모두 해제')}</button>` : '') +
+    `<button class="small timetoggle${on ? ' on' : ''}" data-time aria-pressed="${on}" title="${on ? L('Class times are on the tags. Click to leave them off.', '이름표에 수업 시간이 나옵니다. 누르면 뺍니다.')
+      : L('Class times are off. Click to put them on the tags.', '수업 시간이 빠져 있습니다. 누르면 이름표에 넣습니다.')}">${on ? '✓ ' : ''}${L('Time', '시간')}</button>`;
 }
+const showTime = () => state.showTime !== false;
 document.getElementById('classbar').addEventListener('click', e => {
+  if (e.target.closest('[data-time]')) { state.showTime = !showTime(); renderClasses(); render(); return; }
   const b = e.target.closest('[data-all]'); if (!b) return;
   state.classes.forEach(c => { c.include = b.dataset.all === '1'; });
   renderClasses(); render();
@@ -1693,7 +1700,7 @@ function tagHTML(c, name, ci) {
   const cls = [c.name, c.subject].filter(Boolean).join(' ');
   const teacher = clean(c.teacher) || clean(state.teacher);
   const n = nameHTML(name);
-  const when = [clean(c.time), clean(c.days)].filter(Boolean).join(' '); // time first, e.g. "4:00 Mon / Wed"; time is optional
+  const when = [showTime() ? clean(c.time) : '', clean(c.days)].filter(Boolean).join(' '); // time first, e.g. "4:00 Mon / Wed"; time is optional
   const inner = `
     <div class="name" style="font-size:${nameSize(n.text)}pt">${n.html}</div>
     <div class="mid" style="font-size:${midSize(cls, when)}pt"><span>${esc(cls)}</span><span>${esc(when)}</span></div>
