@@ -436,7 +436,7 @@
       <ol class="hint steps">
         <li><span data-i18n="li1"><b>One time only:</b> show your bookmarks bar (Ctrl+Shift+B), then drag this button onto it:</span>
           <a id="bookmarklet" class="bookmarklet" href="#" onclick="return false" title="Drag me to your bookmarks bar" data-i18n="bm" data-i18n-title="bmTitle">Copy students</a></li>
-        <li data-i18n="li2">On the TOPIA <b>Attendance</b> page (the list of your classes for a day), click <b>Copy students</b> in your bookmarks bar. It opens each class's list by itself and closes it again with Cancel. It never presses Save.</li>
+        <li data-i18n="li2">On the TOPIA <b>Attendance</b> page (the list of your classes for a day), click <b>Copy students</b> in your bookmarks bar. It reads every class's students at once. If that ever fails, it opens each class's list by itself and closes it again with Cancel. It never presses Save.</li>
         <li data-i18n="li3">When it's finished, click <b>Copy for name tags</b> in the red box.</li>
         <li data-i18n="li4">Come back here, click the box below and press <b>Ctrl+V</b>. Every class and student comes in at once, with the days filled in.</li>
         <li data-i18n="li5">Classes that meet on other days? Change the date on the TOPIA page and repeat. New classes are added, and days like <i>Mon / Wed</i> build up automatically.</li>
@@ -504,7 +504,7 @@ const KO = {
   topiaHint: '학생은 <i>학생 복사</i> 버튼으로 TOPIA 출석 페이지에서 바로 가져옵니다.',
   li1: '<b>처음 한 번만:</b> 북마크바를 표시하고(Ctrl+Shift+B) 이 버튼을 북마크바로 끌어다 놓으세요:',
   bm: '학생 복사', bmTitle: '북마크바로 끌어다 놓으세요',
-  li2: 'TOPIA <b>출석</b> 페이지(그날의 반 목록)에서 북마크바의 <b>학생 복사</b>를 누르세요. 반마다 명단을 차례로 열고 취소로 다시 닫습니다. 저장은 절대 누르지 않습니다.',
+  li2: 'TOPIA <b>출석</b> 페이지(그날의 반 목록)에서 북마크바의 <b>학생 복사</b>를 누르세요. 모든 반의 학생을 한 번에 읽습니다. 안 되면 반마다 명단을 차례로 열고 취소로 다시 닫습니다. 저장은 절대 누르지 않습니다.',
   li3: '다 끝나면 빨간 상자의 <b>Copy for name tags · 이름표용 복사</b>를 누르세요.',
   li4: '이 페이지로 돌아와 아래 칸을 누르고 <b>Ctrl+V</b>를 누르세요. 모든 반과 학생이 요일까지 채워져 한 번에 들어옵니다.',
   li5: '다른 요일에 수업하는 반이 있나요? TOPIA 페이지에서 날짜를 바꾸고 다시 하세요. 새 반이 추가되고 <i>Mon / Wed</i> 같은 요일이 자동으로 쌓입니다.',
@@ -1270,18 +1270,58 @@ function copyStudentsBookmarklet() {
     }
     return best;
   };
+  var readAll = async function () {
+    try {
+      var tok = (D.cookie.match(/(?:^|; )__TP_ACCESS_TOKEN=([^;]+)/) || [])[1];
+      if (!tok) return null;
+      var now = new Date(), day = dateEl && dateEl.value ? dateEl.value : new Date(now - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+      var get = async function (path) {
+        var res = await fetch('https://front-api.topiaenglishzone.co.kr/v1/t/class/attendance' + path + '?searchDate=' + encodeURIComponent(day),
+          { headers: { Authorization: 'Bearer ' + decodeURIComponent(tok) } });
+        if (!res.ok) throw new Error('http ' + res.status);
+        return res.json();
+      };
+      var found = {}, order = [];
+      var walk = function (v, d) {
+        if (!v || typeof v !== 'object' || d > 6) return;
+        if (Array.isArray(v)) { v.forEach(function (x) { walk(x, d + 1); }); return; }
+        if (typeof v.classId === 'number' && typeof v.className === 'string' && v.className && !found[v.classId]) { found[v.classId] = v.className; order.push(v.classId); }
+        Object.keys(v).forEach(function (k) { walk(v[k], d + 1); });
+      };
+      say('Reading your classes&hellip;' + ko('반 목록을 읽는 중&hellip;'));
+      walk(await get(''), 0);
+      if (order.length !== buttons.length) return null;
+      var list = await Promise.all(order.map(async function (id) {
+        var j = await get('/' + id), info = j && j.data && j.data.info;
+        if (!info || !Array.isArray(info.studentObjList)) throw new Error('no list');
+        return { name: info.className || found[id], students: info.studentObjList.length,
+          count: typeof info.studentNum === 'number' ? info.studentNum : null,
+          lines: ['English Name\tKorean Name'].concat(info.studentObjList.map(function (s) { return clean(s.nameE) + '\t' + clean(s.nameK); })) };
+      }));
+      var pos = function (r) { for (var k = 0; k < buttons.length; k++) if (sameClass(buttons[k].name, r.name)) return k; return buttons.length; };
+      return list.sort(function (a, b) { return pos(a) - pos(b); });
+    } catch (e) { return null; }
+  };
+  var clean = function (s) { return String(s || '').replace(/[\t\r\n]+/g, ' ').trim(); };
   (async function () {
     var report = [], total = 0, short = 0;
-    for (var i = 0; i < buttons.length; i++) {
-      var r = await readClass(buttons[i], 'Reading class ' + (i + 1) + ' of ' + buttons.length + ': <b>' + buttons[i].name + '</b>',
-        '반 읽는 중 (' + (i + 1) + '/' + buttons.length + '): <b>' + buttons[i].name + '</b>');
-      out.push('▶ ' + buttons[i].name);
+    var list = await readAll();
+    if (!list) {
+      list = [];
+      for (var i = 0; i < buttons.length; i++) {
+        var r = await readClass(buttons[i], 'Reading class ' + (i + 1) + ' of ' + buttons.length + ': <b>' + buttons[i].name + '</b>',
+          '반 읽는 중 (' + (i + 1) + '/' + buttons.length + '): <b>' + buttons[i].name + '</b>');
+        r.name = buttons[i].name; list.push(r);
+      }
+    }
+    list.forEach(function (r) {
+      out.push('▶ ' + r.name);
       r.lines.forEach(function (l) { out.push(l); });
       total += r.students;
       var full = r.count === null || r.students >= r.count;
       if (!full) short++;
-      report.push((full ? '&#10003; ' : '&#9888; ') + buttons[i].name + ': ' + r.students + (r.count !== null ? ' of ' + r.count : '') + ' students');
-    }
+      report.push((full ? '&#10003; ' : '&#9888; ') + r.name + ': ' + r.students + (r.count !== null ? ' of ' + r.count : '') + ' students');
+    });
     var text = out.join('\n');
     say((short ? '<b>' + short + ' class' + (short > 1 ? 'es are' : ' is') + ' missing students.</b> Close this and click Copy students again, or add them by hand.' +
         ko('<b>' + short + '개 반에 빠진 학생이 있습니다.</b> 이 창을 닫고 학생 복사를 다시 누르거나 직접 추가하세요.')
