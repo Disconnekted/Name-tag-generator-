@@ -108,9 +108,9 @@ These were all decided by the project owner. Please don't undo them without aski
     The tag design is drawn 32.5 mm tall and scaled to each label's height (wider labels get a wider tag).
     No cutting guides on sticker sheets (the option is hidden), just the class / page label and the credit.
   - Sheet layouts are in `PAPERS` in `index.html` (x0 / y0 = left / top margin, gx / gy = gaps, mm). V3330 and
-    V3240 margins are the maker's published figures. **V3410's margins weren't published**: it assumes the labels
-    sit edge to edge, centred (11 mm left, 14 mm top). If prints come out shifted, measure a sheet and fix those two
-    numbers.
+    V3240 margins are the maker's published figures. V3410's margins aren't published; they were measured on a
+    real sheet with a ruler (7 mm left, 12.6 mm top, 2.5 mm gap between columns, rows touching). If prints come out
+    shifted, measure a sheet and fix those numbers.
   - One class per page (optional). Only this tag design (a Large size was tried and removed).
 - Names shown as **English | Korean** (default), **Korean | English**, or one of them. **Student names are never red.**
 - Four styles: **Classic** (the original maroon), **Modern**, **Cute** (yellow; corners must stay square for
