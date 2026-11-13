@@ -87,6 +87,9 @@
   .class-card .namelist { display: flex; flex-wrap: wrap; gap: 4px; font-size: 13px; }
   .class-card .namelist span { padding: 2px 8px; border-radius: 10px; background: rgba(0,0,0,.05); }
   .class-card .namelist span.added { background: rgba(122,23,1,.1); }
+  .class-card .namelist .nm { border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: text; }
+  .class-card .namelist .nm:hover { text-decoration: underline dotted; }
+  .class-card .namelist input.nm-edit { width: 14em; padding: 1px 6px; font-size: 13px; }
   .class-card .namelist .x { border: 0; background: none; padding: 0 0 0 5px; font-size: 11px; color: var(--muted); cursor: pointer; }
   .class-card .addname { display: flex; gap: 6px; margin-top: 8px; }
   .class-card .addname input { flex: 1; }
@@ -162,13 +165,13 @@
   html.dark .msg.err { background: #3b1f1f; color: #f3a9a9; }
   html.dark .page { box-shadow: 0 1px 10px rgba(0,0,0,.7); }
 
-  /* ---- Pages & tags (A4 landscape, 5 x 6 = 30 tags per page, like the old sheet) ---- */
+  /* ---- Pages & tags (landscape; size and grid come from the paper setting, in #paper-css) ---- */
   .page {
-    width: 297mm; height: 210mm; background: #fff; margin: 0 auto 14px;
+    background: #fff; margin: 0 auto 14px;
     box-shadow: 0 1px 6px rgba(0,0,0,.18);
     display: flex; align-items: center; justify-content: center;
   }
-  .grid { display: grid; grid-template-columns: repeat(5, 57mm); grid-template-rows: repeat(6, 32.5mm); }
+  .grid { display: grid; }
   /* shared tag structure */
   .tag { display: flex; flex-direction: column; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .tag * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -348,7 +351,6 @@
 
   @media print {
     #tour-shade, #tour-ring, #tour-tip, #notice, #who, #confetti, #yay-shade { display: none !important; }
-    @page { size: A4 landscape; margin: 0; }
     body { background: #fff; }
     header, .controls, .summary, .noprint { display: none !important; }
     .wrap { display: block; padding: 0; }
@@ -359,6 +361,7 @@
     .page:last-child { page-break-after: auto; break-after: auto; }
   }
 </style>
+<style id="paper-css"></style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -427,6 +430,11 @@
         <label><input type="radio" name="tagstyle" value="cute"><i style="background:#FFE066;border:4px solid #F7B731"></i><span data-i18n="cute">Cute</span></label>
         <label><input type="radio" name="tagstyle" value="topia"><i style="background:#fff;border:1px solid #ddd;border-top:6px solid #7E1B17"></i><span>TOPIA</span></label>
       </div>
+      <label for="paper" data-i18n="paperLbl">Paper size</label>
+      <select id="paper">
+        <option value="a4" data-i18n="paperA4">A4 (30 tags per page)</option>
+        <option value="letter" data-i18n="paperLetter">US Letter (24 tags per page)</option>
+      </select>
       <label class="check"><input type="checkbox" id="watermark" checked> <span data-i18n="wm">Squirrel watermark</span></label>
       <label class="check"><input type="checkbox" id="cropmarks" checked> <span data-i18n="crop">Cutting guides (crop marks + class label in the margin)</span></label>
     </div>
@@ -452,7 +460,7 @@
         <label><input type="radio" name="printmode" value="reprint"><span data-i18n="reprint">Reprint some students</span></label>
       </div>
       <p class="hint" id="reprint-hint" hidden data-i18n="reprintHint">Tick the students who need a new tag (a new student, or a lost tag). Only those tags print, packed together on as few pages as possible. Need two of someone? Change ×1 to ×2 next to their name. <a href="#" onclick="clearPicks();return false">Untick everyone</a></p>
-      <p class="hint" data-i18n="hint3">Pick the subject and days (add a class time if you like, it prints before the days; the Time button turns times on or off), and untick classes you don't need. Use ×2 or ×3 next to a class to print extra copies of each tag. Names come from TOPIA. A student missing? Type their name in the box under the class and click Add.</p>
+      <p class="hint" data-i18n="hint3">Pick the subject and days (add a class time if you like, it prints before the days; the Time button turns times on or off), and untick classes you don't need. Use ×2 to ×5 next to a class to print extra copies of each tag. Names come from TOPIA. Click a name to change it. A student missing? Type their name in the box under the class and click Add.</p>
       <datalist id="dayslist">
         <option>Mon / Wed</option><option>Tues / Thurs</option>
       </datalist>
@@ -486,6 +494,7 @@ const KO = {
   namemodeLbl: '이름표에 넣을 이름', both: '영어 | 한국어', korEng: '한국어 | 영어', engOnly: '영어만', korOnly: '한국어만',
   newpage: '반마다 새 페이지에서 시작',
   styleH: '이름표 스타일', classic: '클래식', modern: '모던', cute: '귀여운',
+  paperLbl: '용지 크기', paperA4: 'A4 (한 쪽에 30개)', paperLetter: 'US Letter (한 쪽에 24개)',
   wm: '다람쥐 워터마크', crop: '재단선 (재단 표시 + 여백에 반 이름)',
   d2: '2. 학생 추가',
   pasteLbl: '여기에 붙여 넣기 (Ctrl+V)',
@@ -497,7 +506,7 @@ const KO = {
   d3: '3. 반별 확인',
   printAll: '모든 반 인쇄', reprint: '일부 학생만 다시 인쇄',
   reprintHint: '새 이름표가 필요한 학생(새 학생, 잃어버린 이름표)을 체크하세요. 체크한 이름표만 최대한 적은 장수에 모아 인쇄됩니다. 두 장이 필요하면 이름 옆의 ×1을 ×2로 바꾸세요. <a href="#" onclick="clearPicks();return false">모두 체크 해제</a>',
-  hint3: '과목과 요일을 고르고 (원하면 수업 시간도 넣으세요. 요일 앞에 인쇄되며, 시간 버튼으로 켜고 끕니다), 필요 없는 반은 체크를 해제하세요. 반 옆의 ×2, ×3으로 이름표를 여러 장 인쇄할 수 있습니다. 이름은 TOPIA에서 가져옵니다. 빠진 학생이 있으면 반 아래 칸에 이름을 입력하고 추가를 누르세요.',
+  hint3: '과목과 요일을 고르고 (원하면 수업 시간도 넣으세요. 요일 앞에 인쇄되며, 시간 버튼으로 켜고 끕니다), 필요 없는 반은 체크를 해제하세요. 반 옆의 ×2~×5로 이름표를 여러 장 인쇄할 수 있습니다. 이름은 TOPIA에서 가져옵니다. 이름을 누르면 바꿀 수 있습니다. 빠진 학생이 있으면 반 아래 칸에 이름을 입력하고 추가를 누르세요.',
 };
 const isKo = () => state.lang === 'ko';
 const L = (en, ko) => isKo() ? ko : en;
@@ -544,7 +553,7 @@ let localProfiles = [];                    // teachers saved in this browser
 let cloud = null, cloudReady = false;      // the online database, once it has answered
 let cloudDocs = {};                        // id -> { name, state, updated, by } from the database
 const TAB_ID = Math.random().toString(36).slice(2, 10);
-const freshState = () => ({ teacher: '', school: 'TOPIA', newpage: true, nameMode: 'both', style: 'classic', watermark: true,
+const freshState = () => ({ teacher: '', school: 'TOPIA', newpage: true, nameMode: 'both', style: 'classic', paper: 'a4', watermark: true,
   cropmarks: true, reprint: false, theme: state.theme, lang: state.lang, classes: [] });
 const currentProfile = () => profiles.find(p => p.id === currentId);
 const newProfileId = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -777,6 +786,8 @@ function syncUI() {
   document.getElementById('watermark').checked = state.watermark !== false;
   document.getElementById('cropmarks').checked = state.cropmarks;
   document.getElementById('namemode').value = state.nameMode || 'both';
+  document.getElementById('paper').value = PAPERS[state.paper] ? state.paper : 'a4';
+  setLayout();
   (document.querySelector(`input[name=tagstyle][value="${state.style}"]`) || document.querySelector('input[name=tagstyle]')).checked = true;
   document.getElementById('paste').value = '';
   document.getElementById('msg').className = 'msg';
@@ -1322,9 +1333,24 @@ function copyStudentsBookmarklet() {
 }
 document.getElementById('bookmarklet').href = 'javascript:' + encodeURIComponent('(' + copyStudentsBookmarklet.toString() + ')()');
 
-// Page layout: 5 x 6 tags of 57 x 32.5 mm, centred on A4 landscape (297 x 210 mm), like the old sheet.
-const LAYOUT = { cols: 5, rows: 6, cw: 57, rh: 32.5, W: 297, H: 210 };
-LAYOUT.x0 = (LAYOUT.W - LAYOUT.cols * LAYOUT.cw) / 2; LAYOUT.y0 = (LAYOUT.H - LAYOUT.rows * LAYOUT.rh) / 2;
+// Page layout, landscape. Tags are always 57 x 32.5 mm (like the old sheet), centred on the page:
+// A4 (297 x 210 mm) fits 5 x 6 = 30, US Letter (279.4 x 215.9 mm) fits 4 x 6 = 24.
+const PAPERS = {
+  a4:     { cols: 5, rows: 6, W: 297, H: 210, css: 'A4' },
+  letter: { cols: 4, rows: 6, W: 279.4, H: 215.9, css: 'letter' },
+};
+let LAYOUT;
+function setLayout() {
+  const p = PAPERS[state.paper] || PAPERS.a4;
+  LAYOUT = Object.assign({ cw: 57, rh: 32.5 }, p);
+  LAYOUT.x0 = (LAYOUT.W - LAYOUT.cols * LAYOUT.cw) / 2; LAYOUT.y0 = (LAYOUT.H - LAYOUT.rows * LAYOUT.rh) / 2;
+  document.getElementById('paper-css').textContent = paperCSS();
+}
+// The page size and grid, for the screen and for printing.
+const paperCSS = () => `.page { width: ${LAYOUT.W}mm; height: ${LAYOUT.H}mm; }
+  .grid { grid-template-columns: repeat(${LAYOUT.cols}, ${LAYOUT.cw}mm); grid-template-rows: repeat(${LAYOUT.rows}, ${LAYOUT.rh}mm); }
+  @media print { @page { size: ${LAYOUT.css} landscape; margin: 0; } }`;
+const paperName = () => state.paper === 'letter' ? 'Letter' : 'A4';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tues', 'Wed', 'Thurs', 'Fri', 'Sat'];
 // Classes always meet in pairs: any Monday or Wednesday means "Mon / Wed", Tuesday or Thursday "Tues / Thurs".
@@ -1366,10 +1392,11 @@ function applyGroups(groups) {
   let students = 0;
   const fresh = [];
   const subjects = groups.subjects || new Map(), times = groups.times || new Map();
-  for (const [raw, names] of groups) {
+  for (const [raw, topia] of groups) {
     const nm = shortClass(raw);
     let c = state.classes.find(x => x.name === nm && nm);
     if (!c) { c = newClass(nm); state.classes.push(c); }
+    const names = topia.map(n => (c.renamed && c.renamed[n]) || n); // names the teacher changed stay changed
     if (names.length) { // a class-only list keeps any names already typed in
       // Flag students who weren't in this class before. A class seen for the first time has no "before".
       const before = c.names.filter(Boolean);
@@ -1436,7 +1463,7 @@ function renderClasses() {
         <span class="count">${countText(c)}</span>
         ${state.reprint ? '' : `<label class="inc" title="${L('Print this class', '이 반 인쇄')}"><input type="checkbox" data-f="include" ${c.include ? 'checked' : ''}>${L('Print', '인쇄')}</label>`}
         <select data-f="copies" class="copies" title="${L('Copies of each name tag', '이름표마다 인쇄할 장수')}">
-          ${[1, 2, 3].map(k => `<option value="${k}" ${(c.copies || 1) == k ? 'selected' : ''}>×${k}</option>`).join('')}
+          ${COPIES.map(k => `<option value="${k}" ${(c.copies || 1) == k ? 'selected' : ''}>×${k}</option>`).join('')}
         </select>
         <button class="small danger" data-act="remove" title="${L('Remove class', '반 삭제')}">✕</button>
       </div>
@@ -1453,7 +1480,7 @@ function renderClasses() {
         <div><label>${L('Teacher (blank = your name)', '선생님 (비우면 내 이름)')}</label><input type="text" data-f="teacher" value="${esc(c.teacher)}"></div>
       </div>
       <label>${L('Students', '학생')}</label>
-      <div class="namelist">${c.names.map(n => `<span${isAdded(c, n) ? ' class="added"' : ''}>${esc(clean(String(n).replace(/^\|\s*|\s*\|$/g, '')) || '–')}` +
+      <div class="namelist">${c.names.map(n => `<span${isAdded(c, n) ? ' class="added"' : ''}><button class="nm" data-act="editname" data-name="${esc(n)}" title="${L('Click to change this name', '눌러서 이름 바꾸기')}">${esc(clean(String(n).replace(/^\|\s*|\s*\|$/g, '')) || '–')}</button>` +
         (isAdded(c, n) ? `<button class="x" data-act="delname" data-name="${esc(n)}" title="${L('Remove this student', '이 학생 삭제')}">✕</button>` : '') + '</span>').join('')}</div>
       <div class="addname"><input type="text" data-addname placeholder="${L('Add a student, e.g. Soyul | 김소율', '학생 추가, 예: Soyul | 김소율')}"><button class="small" data-act="addname">${L('Add', '추가')}</button></div>
       ${state.reprint ? `<div class="picklist">${pickHTML(c)}</div>` : ''}
@@ -1502,7 +1529,7 @@ function pickHTML(c) {
   return names.length
     ? names.map(n => `<label><input type="checkbox" data-f="pick" data-name="${esc(n)}" ${picked.has(n) ? 'checked' : ''}>${esc(n)}` +
         ((c.newNames || []).includes(n) ? ` <span class="newtag">${L('NEW', '신규')}</span>` : '') +
-        (picked.has(n) ? `<select data-f="pickcount" data-name="${esc(n)}" title="${L('How many of this tag', '이 이름표 장수')}">${[1, 2, 3].map(k =>
+        (picked.has(n) ? `<select data-f="pickcount" data-name="${esc(n)}" title="${L('How many of this tag', '이 이름표 장수')}">${COPIES.map(k =>
           `<option value="${k}" ${pickCount(c, n) === k ? 'selected' : ''}>×${k}</option>`).join('')}</select>` : '') + '</label>').join('')
     : `<span class="none">${L('No students in this class yet.', '이 반에는 아직 학생이 없습니다.')}</span>`;
 }
@@ -1515,6 +1542,39 @@ function typedName(t) {
   let [e, k = ''] = t.split('|').map(clean);
   if (/[ㄱ-힣]/.test(e) && !/[ㄱ-힣]/.test(k)) [e, k] = [k, e];
   return e && k ? `${e} | ${k}` : (e || `| ${k}`);
+}
+// Change a student's name everywhere it is kept. A TOPIA name that was changed stays changed when the
+// class is copied in again (c.renamed: TOPIA's spelling -> the teacher's).
+function renameStudent(c, from, to) {
+  if (!to || to === from) return true;
+  if (c.names.some(o => o !== from && normName(o) === normName(to))) {
+    showMsg(L(`${to} is already in ${c.name}.`, `${to} 학생은 이미 ${c.name}에 있습니다.`), false); return false;
+  }
+  const swap = list => list && list.map(n => n === from ? to : n);
+  c.names = swap(c.names); c.added = swap(c.added); c.picked = swap(c.picked); c.newNames = swap(c.newNames); c.korKeep = swap(c.korKeep);
+  if (c.pickCounts && c.pickCounts[from]) { c.pickCounts = Object.assign({}, c.pickCounts, { [to]: c.pickCounts[from] }); delete c.pickCounts[from]; }
+  if (!isAdded(c, to)) {
+    c.renamed = Object.assign({}, c.renamed);
+    const orig = Object.keys(c.renamed).find(k => c.renamed[k] === from) || from;
+    if (orig === to) delete c.renamed[orig]; else c.renamed[orig] = to;
+  }
+  return true;
+}
+function editName(c, btn) {
+  const from = btn.dataset.name, input = document.createElement('input');
+  input.type = 'text'; input.className = 'nm-edit'; input.value = from.replace(/^\|\s*/, '');
+  btn.replaceWith(input); input.focus(); input.select();
+  let done = false;
+  const finish = keep => {
+    if (done) return; done = true;
+    if (keep) renameStudent(c, from, typedName(input.value));
+    renderClasses(); render();
+  };
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish(false); }
+  });
+  input.addEventListener('blur', () => finish(true));
 }
 function addStudent(c, input) {
   const n = typedName(input.value);
@@ -1537,6 +1597,7 @@ function pickedNames(c) { const p = new Set(c.picked || []); return c.names.filt
 function clearPicks() { state.classes.forEach(c => { c.picked = []; }); renderClasses(); render(); }
 
 const DAY_CHOICES = ['Mon / Wed', 'Tues / Thurs'];
+const COPIES = [1, 2, 3, 4, 5]; // ×1 to ×5 of each tag
 
 function countText(c) {
   const k = c.copies || 1, n = c.names.length;
@@ -1584,6 +1645,7 @@ document.getElementById('classes').addEventListener('click', async e => {
   const id = e.target.closest('.class-card').dataset.id;
   const c = state.classes.find(x => x.id == id);
   if (act === 'ticknew') { tickNew([c]); return; }
+  if (act === 'editname') { editName(c, e.target); return; }
   if (act === 'addname') { addStudent(c, e.target.closest('.class-card').querySelector('[data-addname]')); return; }
   if (act === 'delname') {
     const n = e.target.dataset.name;
@@ -1605,11 +1667,7 @@ document.getElementById('classes').addEventListener('click', async e => {
     else card.querySelectorAll('.rombar input[data-kor]').forEach(inp => {
       const eng = clean(inp.value), kor = inp.dataset.kor;
       if (!eng) return;
-      const full = `${eng} | ${splitName(kor).kor}`;
-      c.names = c.names.map(n => n === kor ? full : n);
-      if (c.picked) c.picked = c.picked.map(n => n === kor ? full : n);
-      if (c.newNames) c.newNames = c.newNames.map(n => n === kor ? full : n);
-      if (c.added) c.added = c.added.map(n => n === kor ? full : n);
+      renameStudent(c, kor, `${eng} | ${splitName(kor).kor}`);
     });
     renderClasses(); render(); return;
   }
@@ -1627,6 +1685,7 @@ document.getElementById('newpage').addEventListener('change', e => { state.newpa
 document.getElementById('watermark').addEventListener('change', e => { state.watermark = e.target.checked; render(); });
 document.getElementById('cropmarks').addEventListener('change', e => { state.cropmarks = e.target.checked; render(); });
 document.getElementById('namemode').addEventListener('change', e => { state.nameMode = e.target.value; render(); });
+document.getElementById('paper').addEventListener('change', e => { state.paper = e.target.value; setLayout(); render(); fitPreview(); });
 
 // Dark mode follows the computer's setting until the button is used, then remembers the choice.
 const darkQuery = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
@@ -1745,8 +1804,8 @@ function render() {
     ? (state.reprint ? L('Tick the students who need a new tag, under each class on the left.', '왼쪽 각 반에서 새 이름표가 필요한 학생을 체크하세요.')
                      : L('Your tags will appear here.', '여기에 이름표가 나타납니다.'))
     : (state.reprint ? L('Reprint: ', '다시 인쇄: ') : '') + L(
-      `${total} tag${total === 1 ? '' : 's'} from ${classes} class${classes === 1 ? '' : 'es'} on ${pages} page${pages === 1 ? '' : 's'} (A4 landscape, ${PER} per page). Print at 100% scale with "Background graphics" turned on.`,
-      `이름표 ${total}개 · ${classes}개 반 · ${pages}쪽 (A4 가로, 한 쪽에 ${PER}개). 배율 100%, "배경 그래픽" 켜기로 인쇄하세요.`);
+      `${total} tag${total === 1 ? '' : 's'} from ${classes} class${classes === 1 ? '' : 'es'} on ${pages} page${pages === 1 ? '' : 's'} (${paperName()} landscape, ${PER} per page). Print at 100% scale with "Background graphics" turned on.`,
+      `이름표 ${total}개 · ${classes}개 반 · ${pages}쪽 (${paperName()} 가로, 한 쪽에 ${PER}개). 배율 100%, "배경 그래픽" 켜기로 인쇄하세요.`);
 }
 
 // Shrink any name that still overflows its box (measured, so mixed English/Korean fits exactly).
@@ -1828,11 +1887,12 @@ async function printOut() {
   const day = new Date().toISOString().slice(0, 10);
   const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="author" content="Joseph McLaren">' +
     `<title>Name tags ${day}</title><style>${document.querySelector('style').textContent}
+    ${paperCSS()}
     .printnote { font: 14px/1.5 Arial, sans-serif; color: #333; background: #FBEDC5; padding: 12px 16px; margin: 0 0 16px; }
     @media print { .printnote { display: none; } }</style></head>` +
     `<body>${document.querySelector('body > svg').outerHTML}` +
-    `<p class="printnote">${L('The print window should open by itself. If it doesn\'t, press <b>Ctrl+P</b> (<b>⌘P</b> on a Mac). Use paper size A4, landscape, margins <b>None</b>, scale <b>100%</b>.',
-      '인쇄 창이 자동으로 열립니다. 열리지 않으면 <b>Ctrl+P</b> (Mac은 <b>⌘P</b>)를 누르세요. 용지 A4, 가로, 여백 <b>없음</b>, 배율 <b>100%</b>로 인쇄하세요.')}<br>` +
+    `<p class="printnote">${L('The print window should open by itself. If it doesn\'t, press <b>Ctrl+P</b> (<b>⌘P</b> on a Mac). Use paper size ${paperName()}, landscape, margins <b>None</b>, scale <b>100%</b>.',
+      '인쇄 창이 자동으로 열립니다. 열리지 않으면 <b>Ctrl+P</b> (Mac은 <b>⌘P</b>)를 누르세요. 용지 ${paperName()}, 가로, 여백 <b>없음</b>, 배율 <b>100%</b>로 인쇄하세요.')}<br>` +
     `<span style="font-size:11px;opacity:.6">Name Tag Generator by Joseph McLaren</span></p>` +
     `<div id="preview-area"><div id="pages">${pages}</div></div>` +
     '<script>addEventListener("load", function () { setTimeout(function () { window.print(); }, 400); });<\/script></body></html>';
@@ -1952,7 +2012,7 @@ document.getElementById('pages').addEventListener('click', e => {
 // Shrink the on-screen preview to fit the window (printing always uses full size).
 function fitPreview() {
   const area = document.getElementById('preview-area');
-  const pageW = 297 * 96 / 25.4;
+  const pageW = LAYOUT.W * 96 / 25.4;
   document.getElementById('pages').style.zoom = Math.min(1, (area.clientWidth - 4) / pageW);
 }
 window.addEventListener('resize', fitPreview);
@@ -1988,8 +2048,8 @@ const TOUR = [
     en: ['2. Add your students', 'Drag the red Copy students button to your bookmarks bar once. After that, click it on the TOPIA attendance page, come back, and press Ctrl+V in the box here.'],
     ko: ['2. 학생 추가', '빨간 학생 복사 버튼을 북마크바로 한 번만 끌어다 놓으세요. 그다음부터는 TOPIA 출석 페이지에서 누르고, 돌아와서 여기 칸에 Ctrl+V를 누르면 됩니다.'] },
   { sel: ['#classes .class-card', '#p-check'],
-    en: ['3. Check each class', 'Every class gets a box. Fill in the subject and click Mon / Wed or Tues / Thurs (or type the days). Add a class time if you like; it prints before the days. Untick a class to leave it out, or pick ×2 / ×3 for extra copies.'],
-    ko: ['3. 반별 확인', '반마다 상자가 하나씩 생깁니다. 과목을 넣고 Mon / Wed나 Tues / Thurs를 누르거나 직접 입력하세요. 수업 시간은 선택이며 요일 앞에 인쇄됩니다. 체크를 해제하면 그 반은 빠지고, ×2 / ×3으로 여러 장 인쇄할 수 있습니다.'] },
+    en: ['3. Check each class', 'Every class gets a box. Fill in the subject and click Mon / Wed or Tues / Thurs (or type the days). Add a class time if you like; it prints before the days. Untick a class to leave it out, or pick ×2 to ×5 for extra copies.'],
+    ko: ['3. 반별 확인', '반마다 상자가 하나씩 생깁니다. 과목을 넣고 Mon / Wed나 Tues / Thurs를 누르거나 직접 입력하세요. 수업 시간은 선택이며 요일 앞에 인쇄됩니다. 체크를 해제하면 그 반은 빠지고, ×2~×5로 여러 장 인쇄할 수 있습니다.'] },
   { sel: '.print-mode',
     en: ['Only need a few tags?', 'Switch to Reprint some students and tick just the ones who need a new tag. When you import a class again, new students are flagged for you.'],
     ko: ['몇 장만 필요할 때', '일부 학생만 다시 인쇄로 바꾸고 새 이름표가 필요한 학생만 체크하세요. 반 명단을 다시 가져오면 새 학생이 자동으로 표시됩니다.'] },
@@ -2122,6 +2182,7 @@ document.addEventListener('keydown', e => {
 });
 
 /* ---------- start ---------- */
+setLayout();
 load(); // signs the same teacher back in after a reload, otherwise asks who's using the tool
 </script>
 </body>

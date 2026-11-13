@@ -65,7 +65,8 @@ There is one tool in four versions. All of them run from the same code.
    On the day's class list on the TOPIA attendance page, click that bookmark, then **Copy for name tags**, then
    press Ctrl+V in the tool. Pasting two days' lists builds the days (for example Mon / Wed).
    How the bookmark reads TOPIA is in section 7.
-3. **Check each class:** choose the subject, click Mon / Wed or Tues / Thurs, set copies (×1 to ×3).
+3. **Check each class:** choose the subject, click Mon / Wed or Tues / Thurs, set copies (×1 to ×5).
+   Click any student's name to change it (Enter to save, Esc to cancel).
    A class time is optional (the "Time (optional)" box next to Subject); when filled in it prints before the
    days, e.g. "4:00 Mon / Wed". Left blank, the tag shows just the days.
    Copy students fills it in from TOPIA's Time column (start time, "16:00~16:50" becomes "4:00"),
@@ -87,7 +88,10 @@ These were all decided by the project owner. Please don't undo them without aski
 - **The Copy students bookmark is the only way to add classes and students** (decided 3 Nov 2026). File import,
   drag-and-drop, Excel paste and "Add a class" were removed. The paste box only accepts text that starts with
   `#TOPIA-NAMETAGS`. Class and student names from TOPIA are read-only.
-- The one exception: each class has an **Add a student** box (in both print modes) for someone missing from
+- **Names can be changed** by clicking them (decided 13 Nov 2026). A changed TOPIA name is remembered per class
+  (`c.renamed`: TOPIA's spelling → the teacher's), so copying the class in again keeps the change. Accepting an
+  English name suggestion counts as a change too.
+- Each class also has an **Add a student** box (in both print modes) for someone missing from
   TOPIA. Typed names can be removed with ✕, stay after re-importing, and disappear if TOPIA later lists them.
 - The TOPIA attendance page needs a login, so the tool can't fetch it. That's why the bookmark exists.
   The bookmark waits for the right popup and the full number of rows, retries a class up to 3 times, and shows
@@ -97,8 +101,9 @@ These were all decided by the project owner. Please don't undo them without aski
   "Keep Korean only".
 
 ### The tags
-- A4 landscape, **5 × 6 = 30 tags per page**, one class per page (optional). Only this size (a Large size was
-  tried and removed).
+- Landscape pages, tags always 57 × 32.5 mm: **A4 = 5 × 6 = 30 tags per page** (default) or **US Letter = 4 × 6 = 24**
+  (Paper size, in the Tag style box; added 13 Nov 2026). One class per page (optional). Only this tag size (a Large
+  size was tried and removed).
 - Names shown as **English | Korean** (default), **Korean | English**, or one of them. **Student names are never red.**
 - Four styles: **Classic** (the original maroon), **Modern**, **Cute** (yellow; corners must stay square for
   cutting), **TOPIA** (inspired by the school website). The squirrel watermark is an original drawing.
@@ -115,7 +120,7 @@ These were all decided by the project owner. Please don't undo them without aski
 
 ### Printing modes
 - **Print all classes:** tick which classes to print ("Printing n of m classes", Tick all / Untick all).
-- **Reprint some students:** tick individual students, ×1 to ×3 each, packed onto as few pages as possible.
+- **Reprint some students:** tick individual students, ×1 to ×5 each, packed onto as few pages as possible.
 
 ### The screen
 - Header (with Print) stays visible while scrolling. **Undo / Redo** buttons (Ctrl+Z, Ctrl+Y) match the other
@@ -219,5 +224,6 @@ Things to know when changing the code:
 | 9 Nov 2026 | Time on/off button; Copy students reads all classes at once via TOPIA's API (PR #14) |
 | 11 Nov 2026 | Step 2 shows only the bookmark instruction (PR #15) |
 | 12 Nov 2026 | Clean-up: removed leftover code and text from removed features; one source file for all versions |
+| 13 Nov 2026 | Up to ×5 copies; US Letter paper; student names can be changed |
 
 The pull requests on GitHub have the details of each change.
