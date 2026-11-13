@@ -101,9 +101,17 @@ These were all decided by the project owner. Please don't undo them without aski
   "Keep Korean only".
 
 ### The tags
-- Landscape pages, tags always 57 × 32.5 mm: **A4 = 5 × 6 = 30 tags per page** (default) or **US Letter = 4 × 6 = 24**
-  (Paper size, in the Tag style box; added 13 Nov 2026). One class per page (optional). Only this tag size (a Large
-  size was tried and removed).
+- **Paper** (in the Tag style box; the owner's choice, 13 Nov 2026; US Letter was tried and replaced the same day):
+  - **A4 paper, cut out** (default): A4 landscape, 5 × 6 = 30 tags of 57 × 32.5 mm, cut with the guillotine.
+  - **AnyLabel (Printec) A4 sticker sheets**, printed portrait straight onto the pre-cut labels:
+    V3410 (47 × 26.9 mm, 4 × 10 = 40), V3330 (63.5 × 38.1 mm, 3 × 7 = 21), V3240 (99.06 × 33.85 mm, 2 × 8 = 16).
+    The tag design is drawn 32.5 mm tall and scaled to each label's height (wider labels get a wider tag).
+    No cutting guides on sticker sheets (the option is hidden), just the class / page label and the credit.
+  - Sheet layouts are in `PAPERS` in `index.html` (x0 / y0 = left / top margin, gx / gy = gaps, mm). V3330 and
+    V3240 margins are the maker's published figures. **V3410's margins weren't published**: it assumes the labels
+    sit edge to edge, centred (11 mm left, 14 mm top). If prints come out shifted, measure a sheet and fix those two
+    numbers.
+  - One class per page (optional). Only this tag design (a Large size was tried and removed).
 - Names shown as **English | Korean** (default), **Korean | English**, or one of them. **Student names are never red.**
 - Four styles: **Classic** (the original maroon), **Modern**, **Cute** (yellow; corners must stay square for
   cutting), **TOPIA** (inspired by the school website). The squirrel watermark is an original drawing.
@@ -224,6 +232,6 @@ Things to know when changing the code:
 | 9 Nov 2026 | Time on/off button; Copy students reads all classes at once via TOPIA's API (PR #14) |
 | 11 Nov 2026 | Step 2 shows only the bookmark instruction (PR #15) |
 | 12 Nov 2026 | Clean-up: removed leftover code and text from removed features; one source file for all versions |
-| 13 Nov 2026 | Up to ×5 copies; US Letter paper; student names can be changed |
+| 13 Nov 2026 | Up to ×5 copies; AnyLabel sticker sheets (V3410, V3330, V3240); student names can be changed |
 
 The pull requests on GitHub have the details of each change.

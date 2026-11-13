@@ -165,13 +165,12 @@
   html.dark .msg.err { background: #3b1f1f; color: #f3a9a9; }
   html.dark .page { box-shadow: 0 1px 10px rgba(0,0,0,.7); }
 
-  /* ---- Pages & tags (landscape; size and grid come from the paper setting, in #paper-css) ---- */
+  /* ---- Pages & tags (page size, label positions and tag scale come from the paper setting, in #paper-css) ---- */
   .page {
     background: #fff; margin: 0 auto 14px;
     box-shadow: 0 1px 6px rgba(0,0,0,.18);
-    display: flex; align-items: center; justify-content: center;
   }
-  .grid { display: grid; }
+  .grid { display: grid; position: absolute; }
   /* shared tag structure */
   .tag { display: flex; flex-direction: column; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .tag * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -430,13 +429,10 @@
         <label><input type="radio" name="tagstyle" value="cute"><i style="background:#FFE066;border:4px solid #F7B731"></i><span data-i18n="cute">Cute</span></label>
         <label><input type="radio" name="tagstyle" value="topia"><i style="background:#fff;border:1px solid #ddd;border-top:6px solid #7E1B17"></i><span>TOPIA</span></label>
       </div>
-      <label for="paper" data-i18n="paperLbl">Paper size</label>
-      <select id="paper">
-        <option value="a4" data-i18n="paperA4">A4 (30 tags per page)</option>
-        <option value="letter" data-i18n="paperLetter">US Letter (24 tags per page)</option>
-      </select>
+      <label for="paper" data-i18n="paperLbl">Paper</label>
+      <select id="paper"></select>
       <label class="check"><input type="checkbox" id="watermark" checked> <span data-i18n="wm">Squirrel watermark</span></label>
-      <label class="check"><input type="checkbox" id="cropmarks" checked> <span data-i18n="crop">Cutting guides (crop marks + class label in the margin)</span></label>
+      <label class="check" id="crop-row"><input type="checkbox" id="cropmarks" checked> <span data-i18n="crop">Cutting guides (crop marks + class label in the margin)</span></label>
     </div>
 
     <div class="panel" id="p-add">
@@ -494,7 +490,7 @@ const KO = {
   namemodeLbl: '이름표에 넣을 이름', both: '영어 | 한국어', korEng: '한국어 | 영어', engOnly: '영어만', korOnly: '한국어만',
   newpage: '반마다 새 페이지에서 시작',
   styleH: '이름표 스타일', classic: '클래식', modern: '모던', cute: '귀여운',
-  paperLbl: '용지 크기', paperA4: 'A4 (한 쪽에 30개)', paperLetter: 'US Letter (한 쪽에 24개)',
+  paperLbl: '용지',
   wm: '다람쥐 워터마크', crop: '재단선 (재단 표시 + 여백에 반 이름)',
   d2: '2. 학생 추가',
   pasteLbl: '여기에 붙여 넣기 (Ctrl+V)',
@@ -532,7 +528,7 @@ function applyLang() {
 }
 function toggleLang() {
   state.lang = isKo() ? 'en' : 'ko';
-  applyLang(); applyTheme(); updateWhoBtn(); renderClasses(); render();
+  applyLang(); applyTheme(); paperOptions(); updateWhoBtn(); renderClasses(); render();
   if (!document.getElementById('who').hidden) renderWho();
   if (tourAt >= 0) tourGo(tourAt);
   const m = document.getElementById('msg'); m.className = 'msg'; // the last message was in the other language
@@ -786,8 +782,7 @@ function syncUI() {
   document.getElementById('watermark').checked = state.watermark !== false;
   document.getElementById('cropmarks').checked = state.cropmarks;
   document.getElementById('namemode').value = state.nameMode || 'both';
-  document.getElementById('paper').value = PAPERS[state.paper] ? state.paper : 'a4';
-  setLayout();
+  setLayout(); paperOptions();
   (document.querySelector(`input[name=tagstyle][value="${state.style}"]`) || document.querySelector('input[name=tagstyle]')).checked = true;
   document.getElementById('paste').value = '';
   document.getElementById('msg').className = 'msg';
@@ -1333,24 +1328,40 @@ function copyStudentsBookmarklet() {
 }
 document.getElementById('bookmarklet').href = 'javascript:' + encodeURIComponent('(' + copyStudentsBookmarklet.toString() + ')()');
 
-// Page layout, landscape. Tags are always 57 x 32.5 mm (like the old sheet), centred on the page:
-// A4 (297 x 210 mm) fits 5 x 6 = 30, US Letter (279.4 x 215.9 mm) fits 4 x 6 = 24.
+// Paper. "a4" is plain A4 landscape: 5 x 6 tags of 57 x 32.5 mm (like the old sheet), cut out with the
+// guillotine. The others are AnyLabel (Printec) A4 sticker sheets, printed portrait straight onto the
+// pre-cut labels: x0 / y0 are the left and top margins, gx / gy the gaps between labels, all in mm.
+// V3240 and V3330 margins are the maker's figures; V3410's labels sit edge to edge, centred on the sheet.
 const PAPERS = {
-  a4:     { cols: 5, rows: 6, W: 297, H: 210, css: 'A4' },
-  letter: { cols: 4, rows: 6, W: 279.4, H: 215.9, css: 'letter' },
+  a4:    { cols: 5, rows: 6, cw: 57, rh: 32.5, W: 297, H: 210, cut: true },
+  v3410: { cols: 4, rows: 10, cw: 47, rh: 26.9, W: 210, H: 297, x0: 11, y0: 14, gx: 0, gy: 0, code: 'V3410' },
+  v3330: { cols: 3, rows: 7, cw: 63.5, rh: 38.1, W: 210, H: 297, x0: 7.62, y0: 15.875, gx: 2.54, gy: 0, code: 'V3330' },
+  v3240: { cols: 2, rows: 8, cw: 99.06, rh: 33.85, W: 210, H: 297, x0: 5.08, y0: 13.7922, gx: 2.54, gy: 0, code: 'V3240' },
 };
+const TAG_H = 32.5; // a tag is designed 32.5 mm tall and scaled to fit each label
 let LAYOUT;
 function setLayout() {
   const p = PAPERS[state.paper] || PAPERS.a4;
-  LAYOUT = Object.assign({ cw: 57, rh: 32.5 }, p);
-  LAYOUT.x0 = (LAYOUT.W - LAYOUT.cols * LAYOUT.cw) / 2; LAYOUT.y0 = (LAYOUT.H - LAYOUT.rows * LAYOUT.rh) / 2;
+  LAYOUT = Object.assign({ gx: 0, gy: 0 }, p);
+  if (LAYOUT.x0 === undefined) { LAYOUT.x0 = (LAYOUT.W - LAYOUT.cols * LAYOUT.cw) / 2; LAYOUT.y0 = (LAYOUT.H - LAYOUT.rows * LAYOUT.rh) / 2; }
+  LAYOUT.scale = LAYOUT.rh / TAG_H;
   document.getElementById('paper-css').textContent = paperCSS();
 }
-// The page size and grid, for the screen and for printing.
+// The page size, where the labels sit, and how much each tag is scaled, for the screen and for printing.
 const paperCSS = () => `.page { width: ${LAYOUT.W}mm; height: ${LAYOUT.H}mm; }
-  .grid { grid-template-columns: repeat(${LAYOUT.cols}, ${LAYOUT.cw}mm); grid-template-rows: repeat(${LAYOUT.rows}, ${LAYOUT.rh}mm); }
-  @media print { @page { size: ${LAYOUT.css} landscape; margin: 0; } }`;
-const paperName = () => state.paper === 'letter' ? 'Letter' : 'A4';
+  .grid { left: ${LAYOUT.x0}mm; top: ${LAYOUT.y0}mm; column-gap: ${LAYOUT.gx}mm; row-gap: ${LAYOUT.gy}mm;
+    grid-template-columns: repeat(${LAYOUT.cols}, ${LAYOUT.cw}mm); grid-template-rows: repeat(${LAYOUT.rows}, ${LAYOUT.rh}mm); }
+  .grid > .tag { width: ${+(LAYOUT.cw / LAYOUT.scale).toFixed(3)}mm; height: ${TAG_H}mm; zoom: ${+LAYOUT.scale.toFixed(5)}; }
+  @media print { @page { size: A4 ${LAYOUT.cut ? 'landscape' : 'portrait'}; margin: 0; } }`;
+const paperName = () => LAYOUT.cut ? L('A4 landscape', 'A4 가로') : `AnyLabel ${LAYOUT.code}`;
+const paperLabel = k => { const p = PAPERS[k]; return p.cut ? L(`A4 paper, cut out (${p.cols * p.rows} per page)`, `A4 용지, 잘라서 사용 (한 쪽에 ${p.cols * p.rows}개)`)
+  : L(`AnyLabel ${p.code} labels · ${p.cw} × ${p.rh} mm (${p.cols * p.rows} per sheet)`, `애니라벨 ${p.code} 라벨 · ${p.cw} × ${p.rh} mm (한 장에 ${p.cols * p.rows}칸)`); };
+function paperOptions() {
+  const sel = document.getElementById('paper'), v = PAPERS[state.paper] ? state.paper : 'a4';
+  sel.innerHTML = Object.keys(PAPERS).map(k => `<option value="${k}">${esc(paperLabel(k))}</option>`).join('');
+  sel.value = v;
+  document.getElementById('crop-row').hidden = !PAPERS[v].cut; // sticker labels are already cut
+}
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tues', 'Wed', 'Thurs', 'Fri', 'Sat'];
 // Classes always meet in pairs: any Monday or Wednesday means "Mon / Wed", Tuesday or Thursday "Tues / Thurs".
@@ -1685,7 +1696,7 @@ document.getElementById('newpage').addEventListener('change', e => { state.newpa
 document.getElementById('watermark').addEventListener('change', e => { state.watermark = e.target.checked; render(); });
 document.getElementById('cropmarks').addEventListener('change', e => { state.cropmarks = e.target.checked; render(); });
 document.getElementById('namemode').addEventListener('change', e => { state.nameMode = e.target.value; render(); });
-document.getElementById('paper').addEventListener('change', e => { state.paper = e.target.value; setLayout(); render(); fitPreview(); });
+document.getElementById('paper').addEventListener('change', e => { state.paper = e.target.value; setLayout(); paperOptions(); render(); fitPreview(); });
 
 // Dark mode follows the computer's setting until the button is used, then remembers the choice.
 const darkQuery = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
@@ -1796,7 +1807,7 @@ function render() {
     const tags = pg.tags;
     while (tags.length < PER) tags.push('<div class="tag blank-slot"></div>');
     const label = `${[...pg.names].join(', ')}  ·  ${L(`page ${i + 1} of ${chunks.length}`, `${i + 1} / ${chunks.length}쪽`)}`;
-    return `<div class="page style-${esc(state.style)}${state.watermark ? '' : ' no-wm'}">${state.cropmarks ? cropMarks(label) : ''}${creditMark()}<div class="grid">${tags.join('')}</div></div>`;
+    return `<div class="page style-${esc(state.style)}${state.watermark ? '' : ' no-wm'}">${LAYOUT.cut ? (state.cropmarks ? cropMarks(label) : '') : sheetLabel(label)}${creditMark()}<div class="grid">${tags.join('')}</div></div>`;
   }).join('');
   fitNames();
   const pages = chunks.length;
@@ -1804,8 +1815,8 @@ function render() {
     ? (state.reprint ? L('Tick the students who need a new tag, under each class on the left.', '왼쪽 각 반에서 새 이름표가 필요한 학생을 체크하세요.')
                      : L('Your tags will appear here.', '여기에 이름표가 나타납니다.'))
     : (state.reprint ? L('Reprint: ', '다시 인쇄: ') : '') + L(
-      `${total} tag${total === 1 ? '' : 's'} from ${classes} class${classes === 1 ? '' : 'es'} on ${pages} page${pages === 1 ? '' : 's'} (${paperName()} landscape, ${PER} per page). Print at 100% scale with "Background graphics" turned on.`,
-      `이름표 ${total}개 · ${classes}개 반 · ${pages}쪽 (${paperName()} 가로, 한 쪽에 ${PER}개). 배율 100%, "배경 그래픽" 켜기로 인쇄하세요.`);
+      `${total} tag${total === 1 ? '' : 's'} from ${classes} class${classes === 1 ? '' : 'es'} on ${pages} page${pages === 1 ? '' : 's'} (${paperName()}, ${PER} per ${LAYOUT.cut ? 'page' : 'sheet'}). Print at 100% scale with "Background graphics" turned on.`,
+      `이름표 ${total}개 · ${classes}개 반 · ${pages}쪽 (${paperName()}, 한 장에 ${PER}개). 배율 100%, "배경 그래픽" 켜기로 인쇄하세요.`);
 }
 
 // Shrink any name that still overflows its box (measured, so mixed English/Korean fits exactly).
@@ -1865,6 +1876,11 @@ function cropMarks(label) {
     `<path d="${grid}" stroke="#444" stroke-width=".2" fill="none" opacity=".85"/>` +
     `<text x="${x0 + 2}" y="${H - y0 / 2 + 1}" font-size="2.6" font-family="Arial, sans-serif" fill="#555">${esc(label)}</text></svg>`;
 }
+// On sticker sheets: just the class / page label in the bottom margin.
+function sheetLabel(label) {
+  const { W, H, x0, y0, rows, rh, gy } = LAYOUT, bottom = y0 + rows * rh + (rows - 1) * gy;
+  return `<svg class="crop" viewBox="0 0 ${W} ${H}" aria-hidden="true"><text x="${x0 + 2}" y="${(bottom + H) / 2 + 1}" font-size="2.6" font-family="Arial, sans-serif" fill="#555">${esc(label)}</text></svg>`;
+}
 // The creator's credit, printed in the bottom margin of every page whether or not the cutting guides are on.
 function creditMark() {
   const { W, H, x0, y0 } = LAYOUT;
@@ -1891,8 +1907,8 @@ async function printOut() {
     .printnote { font: 14px/1.5 Arial, sans-serif; color: #333; background: #FBEDC5; padding: 12px 16px; margin: 0 0 16px; }
     @media print { .printnote { display: none; } }</style></head>` +
     `<body>${document.querySelector('body > svg').outerHTML}` +
-    `<p class="printnote">${L('The print window should open by itself. If it doesn\'t, press <b>Ctrl+P</b> (<b>⌘P</b> on a Mac). Use paper size ${paperName()}, landscape, margins <b>None</b>, scale <b>100%</b>.',
-      '인쇄 창이 자동으로 열립니다. 열리지 않으면 <b>Ctrl+P</b> (Mac은 <b>⌘P</b>)를 누르세요. 용지 ${paperName()}, 가로, 여백 <b>없음</b>, 배율 <b>100%</b>로 인쇄하세요.')}<br>` +
+    `<p class="printnote">${L(`The print window should open by itself. If it doesn't, press <b>Ctrl+P</b> (<b>⌘P</b> on a Mac). Use paper size A4, ${LAYOUT.cut ? 'landscape' : 'portrait'}, margins <b>None</b>, scale <b>100%</b>.${LAYOUT.cut ? '' : ` Put the AnyLabel ${LAYOUT.code} sheets in the printer.`}`,
+      `인쇄 창이 자동으로 열립니다. 열리지 않으면 <b>Ctrl+P</b> (Mac은 <b>⌘P</b>)를 누르세요. 용지 A4, ${LAYOUT.cut ? '가로' : '세로'}, 여백 <b>없음</b>, 배율 <b>100%</b>로 인쇄하세요.${LAYOUT.cut ? '' : ` 프린터에 애니라벨 ${LAYOUT.code} 라벨지를 넣으세요.`}`)}<br>` +
     `<span style="font-size:11px;opacity:.6">Name Tag Generator by Joseph McLaren</span></p>` +
     `<div id="preview-area"><div id="pages">${pages}</div></div>` +
     '<script>addEventListener("load", function () { setTimeout(function () { window.print(); }, 400); });<\/script></body></html>';
