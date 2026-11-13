@@ -1332,10 +1332,10 @@ document.getElementById('bookmarklet').href = 'javascript:' + encodeURIComponent
 // guillotine. The others are AnyLabel (Printec) A4 sticker sheets, printed portrait straight onto the
 // pre-cut labels: x0 / y0 are the left and top margins, gx / gy the gaps between labels, all in mm.
 // V3240 and V3330 margins are the maker's figures; V3410's were measured on a real sheet (13 Nov 2026):
-// 7 mm left, 12.6 mm top, 2.5 mm between columns, rows touching.
+// 7 mm left, 14.3 mm top (checked with a test print), 2.5 mm between columns, rows touching.
 const PAPERS = {
   a4:    { cols: 5, rows: 6, cw: 57, rh: 32.5, W: 297, H: 210, cut: true },
-  v3410: { cols: 4, rows: 10, cw: 47, rh: 26.9, W: 210, H: 297, x0: 7, y0: 12.6, gx: 2.5, gy: 0, code: 'V3410' },
+  v3410: { cols: 4, rows: 10, cw: 47, rh: 26.9, W: 210, H: 297, x0: 7, y0: 14.3, gx: 2.5, gy: 0, code: 'V3410' },
   v3330: { cols: 3, rows: 7, cw: 63.5, rh: 38.1, W: 210, H: 297, x0: 7.62, y0: 15.875, gx: 2.54, gy: 0, code: 'V3330' },
   v3240: { cols: 2, rows: 8, cw: 99.06, rh: 33.85, W: 210, H: 297, x0: 5.08, y0: 13.7922, gx: 2.54, gy: 0, code: 'V3240' },
 };
