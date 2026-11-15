@@ -441,8 +441,8 @@
       <h2 data-i18n="d2">2. Add students</h2>
       <p class="hint"><span data-i18n="li1"><b>One time only:</b> show your bookmarks bar (Ctrl+Shift+B), then drag this button onto it:</span>
           <a id="bookmarklet" class="bookmarklet" href="#" onclick="return false" title="Drag me to your bookmarks bar" data-i18n="bm" data-i18n-title="bmTitle">Copy students</a></p>
-      <label for="paste" data-i18n="pasteLbl">Paste here (Ctrl+V)</label>
-      <textarea id="paste" data-i18n-placeholder="pastePh" placeholder="Click here and press Ctrl+V after using Copy students"></textarea>
+      <label for="paste" data-i18n="pasteLbl">Paste (Ctrl+V anywhere on this page)</label>
+      <textarea id="paste" data-i18n-placeholder="pastePh" placeholder="After Copy students, just press Ctrl+V"></textarea>
       <div class="btns">
         <button class="danger" onclick="clearAll()" data-i18n="clearBtn">Clear everything</button>
       </div>
@@ -494,8 +494,8 @@ const KO = {
   paperLbl: '용지',
   wm: '다람쥐 워터마크', crop: '재단선', cropTitle: '재단 표시와 여백의 반 이름',
   d2: '2. 학생 추가',
-  pasteLbl: '여기에 붙여 넣기 (Ctrl+V)',
-  pastePh: '학생 복사를 사용한 뒤 여기를 누르고 Ctrl+V를 누르세요',
+  pasteLbl: '붙여 넣기 (이 페이지 어디서나 Ctrl+V)',
+  pastePh: '학생 복사 후 Ctrl+V만 누르세요',
   clearBtn: '모두 지우기',
   topiaHint: '학생은 <i>학생 복사</i> 버튼으로 TOPIA 출석 페이지에서 바로 가져옵니다.',
   li1: '<b>처음 한 번만:</b> 북마크바를 표시하고(Ctrl+Shift+B) 이 버튼을 북마크바로 끌어다 놓으세요:',
@@ -1143,10 +1143,14 @@ function parseRows(rows) {
 const ONLY_TOPIA = () => showMsg(L('Only lists copied with the Copy students bookmark can be pasted here. Click it on the TOPIA attendance page first.',
   '학생 복사 북마크로 복사한 명단만 붙여 넣을 수 있습니다. 먼저 TOPIA 출석 페이지에서 눌러 주세요.'), false);
 const pasteBox = document.getElementById('paste');
-pasteBox.addEventListener('paste', e => {
-  e.preventDefault();
+// Ctrl+V anywhere on the page brings the students in; other pastes into other boxes work as normal.
+document.addEventListener('paste', e => {
+  if (!currentId || tourAt >= 0) return; // not on the sign-in screen or during the tour
   const text = e.clipboardData && e.clipboardData.getData('text/plain');
-  if (!text || !text.startsWith('#TOPIA-NAMETAGS')) { ONLY_TOPIA(); return; }
+  const isList = !!text && text.startsWith('#TOPIA-NAMETAGS');
+  if (!isList && e.target !== pasteBox) return;
+  e.preventDefault();
+  if (!isList) { ONLY_TOPIA(); return; }
   const lines = text.split(/\r?\n/).slice(1);
   const date = (lines[0] || '').match(/^#DATE (\d{4})-(\d\d)-(\d\d)/);
   const groups = parseRows(lines.filter(l => !l.startsWith('#')).map(l => l.split('\t')));
@@ -1438,7 +1442,7 @@ function applyGroups(groups) {
     ` ${fresh.length} new student${fresh.length === 1 ? '' : 's'}: ${shown}${more > 0 ? ` and ${more} more` : ''}.`,
     ` 새 학생 ${fresh.length}명: ${shown}${more > 0 ? ` 외 ${more}명` : ''}.`);
   showMsg(students
-    ? L(`Imported ${students} students in ${cls}.${newText} Check the subject and days for each class below.`,
+    ? L(`Imported ${students} student${students === 1 ? '' : 's'} in ${cls}.${newText} Check the subject and days for each class below.`,
         `학생 ${students}명을 ${n}개 반으로 가져왔습니다.${newText} 아래에서 반마다 과목과 요일을 확인하세요.`)
     : L(`Imported ${cls} with their subjects. This list has no student names, so add them to each class below.`,
         `${n}개 반과 과목을 가져왔습니다. 이 명단에는 학생 이름이 없으니 아래 각 반에 이름을 추가하세요.`), true);
@@ -2075,8 +2079,8 @@ const TOUR = [
     en: ['Pick a look', 'Choose one of the four styles. Keep Cutting guides on: the little lines show exactly where to cut with the paper cutter.'],
     ko: ['디자인 고르기', '네 가지 스타일 중 하나를 고르세요. 재단선은 켜 두세요. 재단기로 자를 위치를 작은 선으로 보여 줍니다.'] },
   { sel: '#p-add',
-    en: ['2. Add your students', 'Drag the red Copy students button to your bookmarks bar once. After that, click it on the TOPIA attendance page, come back, and press Ctrl+V in the box here.'],
-    ko: ['2. 학생 추가', '빨간 학생 복사 버튼을 북마크바로 한 번만 끌어다 놓으세요. 그다음부터는 TOPIA 출석 페이지에서 누르고, 돌아와서 여기 칸에 Ctrl+V를 누르면 됩니다.'] },
+    en: ['2. Add your students', 'Drag the red Copy students button to your bookmarks bar once. After that, click it on the TOPIA attendance page, come back, and press Ctrl+V anywhere on this page.'],
+    ko: ['2. 학생 추가', '빨간 학생 복사 버튼을 북마크바로 한 번만 끌어다 놓으세요. 그다음부터는 TOPIA 출석 페이지에서 누르고, 돌아와서 이 페이지 어디서나 Ctrl+V를 누르면 됩니다.'] },
   { sel: ['#classes .class-card', '#p-check'],
     en: ['3. Check each class', 'Every class gets a box. Subject, time and days come from TOPIA, so just check them. Untick a class to leave it out, or pick ×2 to ×5 for extra copies.'],
     ko: ['3. 반별 확인', '반마다 상자가 하나씩 생깁니다. 과목, 시간, 요일은 TOPIA에서 가져오니 확인만 하세요. 체크를 해제하면 그 반은 빠지고, ×2~×5로 여러 장 인쇄할 수 있습니다.'] },

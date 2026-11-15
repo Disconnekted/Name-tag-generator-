@@ -63,7 +63,7 @@ There is one tool in four versions. All of them run from the same code.
 2. **Get students from TOPIA.** Once, drag the red **Copy students** button to the bookmarks bar (the tool's
    Step 2 shows only this one instruction; the rest is explained by the bookmark's own red box and the tour).
    On the day's class list on the TOPIA attendance page, click that bookmark, then **Copy for name tags**, then
-   press Ctrl+V in the tool. Pasting two days' lists builds the days (for example Mon / Wed).
+   press Ctrl+V anywhere in the tool (a document-level paste listener; other boxes paste normally). Pasting two days' lists builds the days (for example Mon / Wed).
    How the bookmark reads TOPIA is in section 7.
 3. **Check each class:** choose the subject, click Mon / Wed or Tues / Thurs, set copies (×1 to ×5).
    Click any student's name to change it (Enter to save, Esc to cancel).
