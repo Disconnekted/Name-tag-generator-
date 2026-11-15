@@ -154,6 +154,8 @@
   html.dark a { color: #8fb8ff; }
   html.dark a.bookmarklet { color: var(--cream); }
   html.dark .class-card { background: #282622; }
+  html.dark .class-card .namelist span { background: rgba(255,255,255,.08); }
+  html.dark .class-card .namelist span.added { background: rgba(242,184,166,.18); }
   html.dark .class-card.active { box-shadow: 0 0 0 2px rgba(110,165,255,.45); }
   html.dark .style-pick label, html.dark .print-mode label { background: #2d2c28; }
   html.dark .style-pick label:has(input:checked), html.dark .print-mode label:has(input:checked) { background: #3b2922; border-color: #c4664c; color: #f2b8a6; }
@@ -407,8 +409,8 @@
     <div class="panel" id="p-details">
       <h2 data-i18n="d1">1. Your details</h2>
       <div class="row">
-        <div><label for="teacher" data-i18n="teacherLbl">Your name (bottom right of each tag)</label><input type="text" id="teacher" placeholder="e.g. Eugene" data-i18n-placeholder="teacherPh"></div>
-        <div><label for="school" data-i18n="schoolLbl">School label (bottom left)</label><input type="text" id="school" value="TOPIA"></div>
+        <div><label for="teacher" data-i18n="teacherLbl">Your name</label><input type="text" id="teacher" title="Printed on every tag" data-i18n-title="teacherTitle" placeholder="e.g. Eugene" data-i18n-placeholder="teacherPh"></div>
+        <div><label for="school" data-i18n="schoolLbl">School label</label><input type="text" id="school" value="TOPIA"></div>
       </div>
       <label for="namemode" data-i18n="namemodeLbl">Names on the tag</label>
       <select id="namemode">
@@ -418,7 +420,6 @@
         <option value="kor" data-i18n="korOnly">Korean only</option>
       </select>
       <label class="check"><input type="checkbox" id="newpage" checked> <span data-i18n="newpage">Start each class on a new page</span></label>
-      <p class="hint privacy" data-i18n="privacy">🔒 Shared computer: your classes are saved under your name. Click <b>Switch</b> at the top when you're done. You're also signed out after 30 minutes without use.</p>
     </div>
 
     <div class="panel" id="p-style">
@@ -432,12 +433,11 @@
       <label for="paper" data-i18n="paperLbl">Paper</label>
       <select id="paper"></select>
       <label class="check"><input type="checkbox" id="watermark" checked> <span data-i18n="wm">Squirrel watermark</span></label>
-      <label class="check" id="crop-row"><input type="checkbox" id="cropmarks" checked> <span data-i18n="crop">Cutting guides (crop marks + class label in the margin)</span></label>
+      <label class="check" id="crop-row" title="Crop marks, plus the class name in the margin" data-i18n-title="cropTitle"><input type="checkbox" id="cropmarks" checked> <span data-i18n="crop">Cutting guides</span></label>
     </div>
 
     <div class="panel" id="p-add">
       <h2 data-i18n="d2">2. Add students</h2>
-      <p class="hint" data-i18n="topiaHint">Students come straight from the TOPIA attendance page, using the <i>Copy students</i> button.</p>
       <p class="hint"><span data-i18n="li1"><b>One time only:</b> show your bookmarks bar (Ctrl+Shift+B), then drag this button onto it:</span>
           <a id="bookmarklet" class="bookmarklet" href="#" onclick="return false" title="Drag me to your bookmarks bar" data-i18n="bm" data-i18n-title="bmTitle">Copy students</a></p>
       <label for="paste" data-i18n="pasteLbl">Paste here (Ctrl+V)</label>
@@ -455,8 +455,8 @@
         <label><input type="radio" name="printmode" value="all"><span data-i18n="printAll">Print all classes</span></label>
         <label><input type="radio" name="printmode" value="reprint"><span data-i18n="reprint">Reprint some students</span></label>
       </div>
-      <p class="hint" id="reprint-hint" hidden data-i18n="reprintHint">Tick the students who need a new tag (a new student, or a lost tag). Only those tags print, packed together on as few pages as possible. Need two of someone? Change ×1 to ×2 next to their name. <a href="#" onclick="clearPicks();return false">Untick everyone</a></p>
-      <p class="hint" data-i18n="hint3">Pick the subject and days (add a class time if you like, it prints before the days; the Time button turns times on or off), and untick classes you don't need. Use ×2 to ×5 next to a class to print extra copies of each tag. Names come from TOPIA. Click a name to change it. A student missing? Type their name in the box under the class and click Add.</p>
+      <p class="hint" id="reprint-hint" hidden data-i18n="reprintHint" title="Only ticked tags print, packed onto as few pages as possible. Change ×1 next to a name for extra copies." data-i18n-title="reprintTitle">Tick the students who need a new tag. <a href="#" onclick="clearPicks();return false">Untick everyone</a></p>
+      <p class="hint" id="hint3" data-i18n="hint3">Untick classes you don't need. Click a student's name to change it.</p>
       <datalist id="dayslist">
         <option>Mon / Wed</option><option>Tues / Thurs</option>
       </datalist>
@@ -485,13 +485,13 @@ const KO = {
   privacy: '🔒 공용 컴퓨터: 반 목록은 내 이름으로 저장됩니다. 다 쓰면 위의 <b>바꾸기</b>를 누르세요. 30분 동안 사용하지 않아도 자동으로 로그아웃됩니다.',
   print: '이름표 인쇄', yay: '다 했어요!', appBtn: '💻 데스크톱 앱 받기', appTitle: '이 컴퓨터에 앱으로 설치하기', undo: '↶ 되돌리기', undoTitle: '마지막 변경 되돌리기 (Ctrl+Z)', redo: '↷ 다시 하기', redoTitle: '되돌린 변경 다시 하기 (Ctrl+Y)',
   d1: '1. 기본 정보',
-  teacherLbl: '내 이름 (이름표 오른쪽 아래)', teacherPh: '예: Eugene',
-  schoolLbl: '학원 이름 (왼쪽 아래)',
+  teacherLbl: '내 이름', teacherPh: '예: Eugene', teacherTitle: '모든 이름표에 인쇄됩니다',
+  schoolLbl: '학원 이름',
   namemodeLbl: '이름표에 넣을 이름', both: '영어 | 한국어', korEng: '한국어 | 영어', engOnly: '영어만', korOnly: '한국어만',
   newpage: '반마다 새 페이지에서 시작',
   styleH: '이름표 스타일', classic: '클래식', modern: '모던', cute: '귀여운',
   paperLbl: '용지',
-  wm: '다람쥐 워터마크', crop: '재단선 (재단 표시 + 여백에 반 이름)',
+  wm: '다람쥐 워터마크', crop: '재단선', cropTitle: '재단 표시와 여백의 반 이름',
   d2: '2. 학생 추가',
   pasteLbl: '여기에 붙여 넣기 (Ctrl+V)',
   pastePh: '학생 복사를 사용한 뒤 여기를 누르고 Ctrl+V를 누르세요',
@@ -501,8 +501,8 @@ const KO = {
   bm: '학생 복사', bmTitle: '북마크바로 끌어다 놓으세요',
   d3: '3. 반별 확인',
   printAll: '모든 반 인쇄', reprint: '일부 학생만 다시 인쇄',
-  reprintHint: '새 이름표가 필요한 학생(새 학생, 잃어버린 이름표)을 체크하세요. 체크한 이름표만 최대한 적은 장수에 모아 인쇄됩니다. 두 장이 필요하면 이름 옆의 ×1을 ×2로 바꾸세요. <a href="#" onclick="clearPicks();return false">모두 체크 해제</a>',
-  hint3: '과목과 요일을 고르고 (원하면 수업 시간도 넣으세요. 요일 앞에 인쇄되며, 시간 버튼으로 켜고 끕니다), 필요 없는 반은 체크를 해제하세요. 반 옆의 ×2~×5로 이름표를 여러 장 인쇄할 수 있습니다. 이름은 TOPIA에서 가져옵니다. 이름을 누르면 바꿀 수 있습니다. 빠진 학생이 있으면 반 아래 칸에 이름을 입력하고 추가를 누르세요.',
+  reprintHint: '새 이름표가 필요한 학생을 체크하세요. <a href="#" onclick="clearPicks();return false">모두 체크 해제</a>', reprintTitle: '체크한 이름표만 최대한 적은 장수에 모아 인쇄됩니다. 여러 장이 필요하면 이름 옆의 ×1을 바꾸세요.',
+  hint3: '필요 없는 반은 체크를 해제하세요. 학생 이름을 누르면 바꿀 수 있습니다.',
 };
 const isKo = () => state.lang === 'ko';
 const L = (en, ko) => isKo() ? ko : en;
@@ -796,7 +796,7 @@ function updateWhoBtn() {
   btn.hidden = !p;
   if (!p) return;
   btn.innerHTML = `👤 <b>${esc(p.name)}</b> · ${L('Switch', '바꾸기')}`;
-  btn.title = L('Switch teacher (your classes stay saved)', '선생님 바꾸기 (내 반 목록은 저장됩니다)');
+  btn.title = L("Sign out so the next teacher can't see your classes. They stay saved. You're also signed out after 30 minutes without use.", '로그아웃하면 다음 선생님이 내 반 목록을 볼 수 없습니다. 반 목록은 저장됩니다. 30분 동안 사용하지 않아도 로그아웃됩니다.');
 }
 
 /* Undo and redo. Every saved change is compared with the one before. Each click is one step; typing
@@ -892,7 +892,7 @@ function renderWho(message) {
   const list = profiles.length
     ? `<div class="who-list">${profiles.map(p => `<div class="who-item"><button class="who-pick" data-act="pick" data-id="${p.id}">${esc(p.name)}</button>` +
         `<button class="small danger" data-act="del" data-id="${p.id}" title="${L('Remove this teacher', '이 선생님 삭제')}">✕</button></div>`).join('')}</div>`
-    : `<p class="hint">${L('No teachers yet. Add your name below to start.', '아직 등록된 선생님이 없습니다. 아래에 이름을 넣고 시작하세요.')}</p>`;
+    : '';
   const moving = localOnly();
   const move = moving.length ? `<div class="who-move"><p>${L(`${moving.length === 1 ? '1 teacher is' : moving.length + ' teachers are'} saved only on this computer: <b>${esc(moving.map(p => p.name).join(', '))}</b>.`,
       `이 컴퓨터에만 저장된 선생님이 ${moving.length}명 있습니다: <b>${esc(moving.map(p => p.name).join(', '))}</b>.`)}</p>
@@ -900,14 +900,12 @@ function renderWho(message) {
   box.innerHTML = `<div class="who-card">${top}${move}${list}
     <h3>${profiles.length ? L('New teacher', '새 선생님') : L('Your name', '내 이름')}</h3>
     <form id="who-new" class="who-form">
-      <input type="text" id="new-name" placeholder="${L('Your name, e.g. Eugene', '이름 (예: Eugene)')}" autocomplete="off">
+      <input type="text" id="new-name" placeholder="${L('e.g. Eugene', '예: Eugene')}" autocomplete="off">
       <button class="primary">${L('Start', '시작')}</button></form>
     <p class="who-err" id="who-err"></p>
     <p class="hint">${cloud
-      ? L("Each teacher's classes are saved online, so you can open this page on any computer and carry on. Click Switch at the top when you're done. You're also signed out after 30 minutes without use.",
-        '선생님마다 반 목록이 온라인에 저장되어 어느 컴퓨터에서든 이 페이지를 열어 이어서 쓸 수 있습니다. 다 쓰면 위의 바꾸기를 누르세요. 30분 동안 사용하지 않아도 자동으로 로그아웃됩니다.')
-      : L("Each teacher's classes are saved separately on this computer. Click Switch at the top when you're done. You're also signed out after 30 minutes without use.",
-        '선생님마다 반 목록이 이 컴퓨터에 따로 저장됩니다. 다 쓰면 위의 바꾸기를 누르세요. 30분 동안 사용하지 않아도 자동으로 로그아웃됩니다.')}</p>
+      ? L('Your classes are saved online under your name, so they are there on any computer.', '반 목록은 내 이름으로 온라인에 저장되어 어느 컴퓨터에서든 열 수 있습니다.')
+      : L('Your classes are saved under your name on this computer.', '반 목록은 이 컴퓨터에 내 이름으로 저장됩니다.')}</p>
     <p class="copyright">Made by Joseph McLaren</p></div>`;
   if (!profiles.length) document.getElementById('new-name').focus();
 }
@@ -1301,7 +1299,7 @@ function copyStudentsBookmarklet() {
       total += r.students;
       var full = r.count === null || r.students >= r.count;
       if (!full) short++;
-      report.push((full ? '&#10003; ' : '&#9888; ') + r.name + ': ' + r.students + (r.count !== null ? ' of ' + r.count : '') + ' students');
+      report.push((full ? '&#10003; ' : '&#9888; ') + r.name + ': ' + r.students + (r.count !== null ? ' of ' + r.count : '') + (r.students === 1 && r.count === null ? ' student' : ' students'));
     });
     var text = out.join('\n');
     say((short ? '<b>' + short + ' class' + (short > 1 ? 'es are' : ' is') + ' missing students.</b> Close this and click Copy students again, or add them by hand.' +
@@ -1464,7 +1462,7 @@ async function clearAll() {
 }
 
 function renderClasses() {
-  renderLegend();
+  renderLegend(); stepThreeHints();
   const el = document.getElementById('classes');
   renderClassBar();
   if (!state.classes.length) { el.innerHTML = `<div class="empty">${L('No classes yet. Use <i>Copy students</i> on the TOPIA attendance page, then paste above.', '아직 반이 없습니다. TOPIA 출석 페이지에서 <i>학생 복사</i>를 사용한 뒤 위에 붙여 넣으세요.')}</div>`; return; }
@@ -1474,9 +1472,9 @@ function renderClasses() {
         <strong>${esc(c.name) || L('New class', '새 반')}</strong>
         <span class="count">${countText(c)}</span>
         ${state.reprint ? '' : `<label class="inc" title="${L('Print this class', '이 반 인쇄')}"><input type="checkbox" data-f="include" ${c.include ? 'checked' : ''}>${L('Print', '인쇄')}</label>`}
-        <select data-f="copies" class="copies" title="${L('Copies of each name tag', '이름표마다 인쇄할 장수')}">
+        ${state.reprint ? '' : `<select data-f="copies" class="copies" title="${L('Copies of each name tag', '이름표마다 인쇄할 장수')}">
           ${COPIES.map(k => `<option value="${k}" ${(c.copies || 1) == k ? 'selected' : ''}>×${k}</option>`).join('')}
-        </select>
+        </select>`}
         <button class="small danger" data-act="remove" title="${L('Remove class', '반 삭제')}">✕</button>
       </div>
       ${romHTML(c)}
@@ -1484,16 +1482,16 @@ function renderClasses() {
         <span class="nb-btns"><button class="small" data-act="ticknew">${L('Reprint these', '이 학생들 인쇄')}</button><button class="small" data-act="dismissnew">${L('Dismiss', '닫기')}</button></span></div>` : ''}
       <div class="row">
         <div><label>${L('Subject', '과목')}<span class="dotwrap">${subDot(c)}</span></label>${subjectHTML(c)}</div>
-        <div class="timebox"${showTime() ? '' : ' hidden'}><label>${L('Time (optional)', '시간 (선택)')}</label><input type="text" data-f="time" value="${esc(c.time || '')}" placeholder="${L('e.g. 4:00', '예: 4:00')}"></div>
+        <div class="timebox"${showTime() ? '' : ' hidden'}><label>${L('Time', '시간')}</label><input type="text" data-f="time" value="${esc(c.time || '')}" placeholder="${L('e.g. 4:00', '예: 4:00')}"></div>
       </div>
       <div class="row">
         <div><div class="dayhead"><label>${L('Days', '요일')}</label>${DAY_CHOICES.map(d => `<button class="small daychip${clean(c.days) === d ? ' on' : ''}" data-act="days" data-v="${d}">${d}</button>`).join('')}</div>
           <input type="text" data-f="days" list="dayslist" value="${esc(c.days)}" placeholder="${L('pick above or type', '위에서 고르거나 입력')}"></div>
-        <div><label>${L('Teacher (blank = your name)', '선생님 (비우면 내 이름)')}</label><input type="text" data-f="teacher" value="${esc(c.teacher)}"></div>
+        <div><label>${L('Teacher', '선생님')}</label><input type="text" data-f="teacher" value="${esc(c.teacher)}" placeholder="${esc(clean(state.teacher) || L('Your name', '내 이름'))}" title="${L('Leave empty to use your name', '비워 두면 내 이름이 들어갑니다')}"></div>
       </div>
-      <label>${L('Students', '학생')}</label>
-      <div class="namelist">${c.names.map(n => `<span${isAdded(c, n) ? ' class="added"' : ''}><button class="nm" data-act="editname" data-name="${esc(n)}" title="${L('Click to change this name', '눌러서 이름 바꾸기')}">${esc(clean(String(n).replace(/^\|\s*|\s*\|$/g, '')) || '–')}</button>` +
-        (isAdded(c, n) ? `<button class="x" data-act="delname" data-name="${esc(n)}" title="${L('Remove this student', '이 학생 삭제')}">✕</button>` : '') + '</span>').join('')}</div>
+      ${state.reprint ? '' : `<label>${L('Students', '학생')}</label>
+      <div class="namelist">${c.names.map(n => `<span${isAdded(c, n) ? ' class="added"' : ''}><button class="nm" data-act="editname" data-name="${esc(n)}" title="${L('Click to change this name', '눌러서 이름 바꾸기')}">${esc(shownName(n))}</button>` +
+        (isAdded(c, n) ? `<button class="x" data-act="delname" data-name="${esc(n)}" title="${L('Remove this student', '이 학생 삭제')}">✕</button>` : '') + '</span>').join('')}</div>`}
       <div class="addname"><input type="text" data-addname placeholder="${L('Add a student, e.g. Soyul | 김소율', '학생 추가, 예: Soyul | 김소율')}"><button class="small" data-act="addname">${L('Add', '추가')}</button></div>
       ${state.reprint ? `<div class="picklist">${pickHTML(c)}</div>` : ''}
     </div>`).join('');
@@ -1508,7 +1506,8 @@ function renderClassBar() {
   if (bar.hidden) return;
   const n = all.filter(c => c.include).length, on = showTime();
   // "Time" is one on/off button: on, each tag shows its class time before the days; off, just the days.
-  bar.innerHTML = (ticks ? `<span>${L(`Printing <b>${n} of ${all.length}</b> classes`, `<b>${all.length}개 중 ${n}개</b> 반 인쇄`)}</span>` +
+  bar.innerHTML = (ticks ? `<span>${L(n === all.length ? (n === 2 ? 'Printing <b>both</b> classes' : `Printing <b>all ${n}</b> classes`) : n ? `Printing <b>${n} of ${all.length}</b> classes` : 'Printing <b>no</b> classes',
+      n === all.length ? `<b>${n}개 반 모두</b> 인쇄` : `<b>${all.length}개 중 ${n}개</b> 반 인쇄`)}</span>` +
     `<button class="small" data-all="1">${L('Tick all', '모두 체크')}</button><button class="small" data-all="0">${L('Untick all', '모두 해제')}</button>` : '') +
     `<button class="small timetoggle${on ? ' on' : ''}" data-time aria-pressed="${on}" title="${on ? L('Class times are on the tags. Click to leave them off.', '이름표에 수업 시간이 나옵니다. 누르면 뺍니다.')
       : L('Class times are off. Click to put them on the tags.', '수업 시간이 빠져 있습니다. 누르면 이름표에 넣습니다.')}">${on ? '✓ ' : ''}${L('Time', '시간')}</button>`;
@@ -1526,7 +1525,7 @@ function updateNewAll() {
   const n = state.classes.reduce((a, c) => a + (c.newNames || []).length, 0);
   const box = document.getElementById('newall');
   box.hidden = !n;
-  box.querySelector('button').textContent = L(`Reprint the ${n} new student${n === 1 ? '' : 's'}`, `새 학생 ${n}명 이름표 인쇄`);
+  box.querySelector('button').textContent = L(n === 1 ? 'Reprint the new student' : `Reprint the ${n} new students`, `새 학생 ${n}명 이름표 인쇄`);
 }
 function tickNew(list) {
   list.forEach(c => { if ((c.newNames || []).length) c.picked = [...new Set([...(c.picked || []), ...c.newNames])]; });
@@ -1534,12 +1533,14 @@ function tickNew(list) {
   showPrintMode(); renderClasses(); render();
 }
 
+// A name as shown on screen: "| 박지민" (no English name) shows as "박지민".
+const shownName = n => clean(String(n).replace(/^\|\s*|\s*\|$/g, '')) || '–';
 // Reprint mode: a tick box per student. Ticks are kept by name, so editing other names keeps them.
 function pickHTML(c) {
   const picked = new Set(c.picked || []);
   const names = [...new Set(c.names.filter(Boolean))];
   return names.length
-    ? names.map(n => `<label><input type="checkbox" data-f="pick" data-name="${esc(n)}" ${picked.has(n) ? 'checked' : ''}>${esc(n)}` +
+    ? names.map(n => `<label><input type="checkbox" data-f="pick" data-name="${esc(n)}" ${picked.has(n) ? 'checked' : ''}>${esc(shownName(n))}` +
         ((c.newNames || []).includes(n) ? ` <span class="newtag">${L('NEW', '신규')}</span>` : '') +
         (picked.has(n) ? `<select data-f="pickcount" data-name="${esc(n)}" title="${L('How many of this tag', '이 이름표 장수')}">${COPIES.map(k =>
           `<option value="${k}" ${pickCount(c, n) === k ? 'selected' : ''}>×${k}</option>`).join('')}</select>` : '') + '</label>').join('')
@@ -1612,6 +1613,7 @@ const DAY_CHOICES = ['Mon / Wed', 'Tues / Thurs'];
 const COPIES = [1, 2, 3, 4, 5]; // ×1 to ×5 of each tag
 
 function countText(c) {
+  if (state.reprint) { const t = pickedNames(c).reduce((a, n) => a + pickCount(c, n), 0); return t ? L(`${t} to reprint`, `다시 인쇄 ${t}개`) : ''; }
   const k = c.copies || 1, n = c.names.length;
   if (isKo()) return k > 1 ? `${n} × ${k} = 이름표 ${n * k}개` : `이름표 ${n}개`;
   return k > 1 ? `${n} × ${k} = ${n * k} tags` : `${n} tag${n === 1 ? '' : 's'}`;
@@ -1634,9 +1636,9 @@ document.getElementById('classes').addEventListener('input', e => {
     const p = new Set(c.picked || []), n = e.target.dataset.name;
     if (e.target.checked) p.add(n); else p.delete(n);
     c.picked = [...p];
-    card.querySelector('.picklist').innerHTML = pickHTML(c);
+    card.querySelector('.count').textContent = countText(c); card.querySelector('.picklist').innerHTML = pickHTML(c);
   }
-  else if (f === 'pickcount') { c.pickCounts = Object.assign({}, c.pickCounts, { [e.target.dataset.name]: +e.target.value }); }
+  else if (f === 'pickcount') { c.pickCounts = Object.assign({}, c.pickCounts, { [e.target.dataset.name]: +e.target.value }); card.querySelector('.count').textContent = countText(c); }
   else if (f === 'copies') { c.copies = +e.target.value; card.querySelector('.count').textContent = countText(c); }
   else { // subject (typed), time, teacher
     c[f] = e.target.value;
@@ -1691,7 +1693,10 @@ document.getElementById('classes').addEventListener('click', async e => {
 /* ---------- settings ---------- */
 ['teacher', 'school'].forEach(k => {
   const el = document.getElementById(k);
-  el.addEventListener('input', () => { state[k] = el.value; scheduleRender(); });
+  el.addEventListener('input', () => {
+    state[k] = el.value; scheduleRender();
+    if (k === 'teacher') document.querySelectorAll('[data-f="teacher"]').forEach(i => { i.placeholder = clean(el.value) || L('Your name', '내 이름'); });
+  });
 });
 document.getElementById('newpage').addEventListener('change', e => { state.newpage = e.target.checked; render(); });
 document.getElementById('watermark').addEventListener('change', e => { state.watermark = e.target.checked; render(); });
@@ -1721,7 +1726,14 @@ document.querySelectorAll('input[name=printmode]').forEach(r => r.addEventListen
 }));
 function showPrintMode() {
   document.querySelector(`input[name=printmode][value="${state.reprint ? 'reprint' : 'all'}"]`).checked = true;
-  document.getElementById('reprint-hint').hidden = !state.reprint;
+  stepThreeHints();
+}
+function stepThreeHints() {
+  const none = !state.classes.length;
+  document.querySelector('.print-mode').hidden = none;
+  document.getElementById('legend').hidden = none;
+  document.getElementById('reprint-hint').hidden = none || !state.reprint;
+  document.getElementById('hint3').hidden = none || state.reprint;
 }
 document.querySelectorAll('input[name=tagstyle]').forEach(r => r.addEventListener('change', () => { state.style = r.value; render(); }));
 
@@ -1813,11 +1825,11 @@ function render() {
   fitNames();
   const pages = chunks.length;
   document.getElementById('summary').textContent = !total
-    ? (state.reprint ? L('Tick the students who need a new tag, under each class on the left.', '왼쪽 각 반에서 새 이름표가 필요한 학생을 체크하세요.')
+    ? (state.reprint ? L('No students ticked yet.', '아직 체크한 학생이 없습니다.')
                      : L('Your tags will appear here.', '여기에 이름표가 나타납니다.'))
     : (state.reprint ? L('Reprint: ', '다시 인쇄: ') : '') + L(
-      `${total} tag${total === 1 ? '' : 's'} from ${classes} class${classes === 1 ? '' : 'es'} on ${pages} page${pages === 1 ? '' : 's'} (${paperName()}, ${PER} per ${LAYOUT.cut ? 'page' : 'sheet'}). Print at 100% scale with "Background graphics" turned on.`,
-      `이름표 ${total}개 · ${classes}개 반 · ${pages}쪽 (${paperName()}, 한 장에 ${PER}개). 배율 100%, "배경 그래픽" 켜기로 인쇄하세요.`);
+      `${total} tag${total === 1 ? '' : 's'} · ${classes} class${classes === 1 ? '' : 'es'} · ${pages} ${LAYOUT.cut ? 'page' : 'sheet'}${pages === 1 ? '' : 's'} (${paperName()}). Print at 100% scale with Background graphics on.`,
+      `이름표 ${total}개 · ${classes}개 반 · ${pages}쪽 (${paperName()}). 배율 100%, 배경 그래픽 켜기로 인쇄하세요.`);
 }
 
 // Shrink any name that still overflows its box (measured, so mixed English/Korean fits exactly).
@@ -2053,8 +2065,8 @@ function appInfo() {
 // Each step spotlights part of the screen; the rest is shaded. Steps whose target isn't on screen
 // (for example the class boxes before any class exists) point at the nearest thing that is.
 const TOUR = [
-  { en: ['Welcome!', 'This quick tour shows each part of the tool, one step at a time. Use Next or the arrow keys. You can stop any time and bring it back with the ? button.'],
-    ko: ['환영합니다!', '이 짧은 안내에서 각 부분을 차례로 보여 드립니다. 다음 버튼이나 화살표 키로 넘기세요. 언제든 그만둘 수 있고 ? 버튼으로 다시 볼 수 있습니다.'] },
+  { en: ['Welcome!', 'A quick look at each part of the tool. Use Next or the arrow keys, and the ? button brings it back.'],
+    ko: ['환영합니다!', '도구의 각 부분을 짧게 보여 드립니다. 다음 버튼이나 화살표 키로 넘기고, ? 버튼으로 다시 볼 수 있습니다.'] },
   { sel: '#p-details',
     en: ['1. Your details', 'Type your name. It goes on the bottom right of every tag. Then choose whether tags show English, Korean or both names.'],
     ko: ['1. 기본 정보', '내 이름을 입력하세요. 모든 이름표 오른쪽 아래에 들어갑니다. 그리고 이름표에 영어, 한국어, 둘 다 중 무엇을 넣을지 고르세요.'] },
@@ -2135,7 +2147,7 @@ function tourGo(i) {
   const tip = document.getElementById('tour-tip');
   tip.querySelector('h3').textContent = title;
   tip.querySelector('p').textContent = body + (i === 0 && state.classes.some(c => c.demo)
-    ? L(' A sample class is added so you can see how it works. It disappears when the tour ends.', ' 사용 모습을 보여 드리려고 예시 반을 하나 넣었습니다. 안내가 끝나면 사라집니다.') : '');
+    ? L(' A sample class is shown until the tour ends.', ' 안내가 끝날 때까지 예시 반이 보입니다.') : '');
   tip.querySelector('.tour-count').textContent = `${i + 1} / ${TOUR.length}`;
   tip.querySelector('.tour-skip').textContent = i === TOUR.length - 1 ? '' : L('Skip tour', '건너뛰기');
   tip.querySelector('.tour-back').textContent = L('Back', '이전');
