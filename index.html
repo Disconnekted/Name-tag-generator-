@@ -275,6 +275,7 @@
   #undo-btn:disabled:hover, #redo-btn:disabled:hover { background: transparent; }
   #undo-btn { margin-right: -10px; }
   html.dark .who-card h3 { color: #c9c5bc; }
+  html.dark .who-top h2 { color: #f2b8a6; }
   html.dark .who-form button.primary, html.dark #notice button.primary, html.dark .who-card > button.primary { background: var(--cream); color: var(--maroon); border-color: var(--cream); }
   html.dark .who-err { color: #ff8a80; }
   html.dark #who-btn, html.dark #undo-btn, html.dark #redo-btn { background: transparent; color: var(--cream); }
@@ -2077,8 +2078,8 @@ const TOUR = [
     en: ['2. Add your students', 'Drag the red Copy students button to your bookmarks bar once. After that, click it on the TOPIA attendance page, come back, and press Ctrl+V in the box here.'],
     ko: ['2. 학생 추가', '빨간 학생 복사 버튼을 북마크바로 한 번만 끌어다 놓으세요. 그다음부터는 TOPIA 출석 페이지에서 누르고, 돌아와서 여기 칸에 Ctrl+V를 누르면 됩니다.'] },
   { sel: ['#classes .class-card', '#p-check'],
-    en: ['3. Check each class', 'Every class gets a box. Fill in the subject and click Mon / Wed or Tues / Thurs (or type the days). Add a class time if you like; it prints before the days. Untick a class to leave it out, or pick ×2 to ×5 for extra copies.'],
-    ko: ['3. 반별 확인', '반마다 상자가 하나씩 생깁니다. 과목을 넣고 Mon / Wed나 Tues / Thurs를 누르거나 직접 입력하세요. 수업 시간은 선택이며 요일 앞에 인쇄됩니다. 체크를 해제하면 그 반은 빠지고, ×2~×5로 여러 장 인쇄할 수 있습니다.'] },
+    en: ['3. Check each class', 'Every class gets a box. Subject, time and days come from TOPIA, so just check them. Untick a class to leave it out, or pick ×2 to ×5 for extra copies.'],
+    ko: ['3. 반별 확인', '반마다 상자가 하나씩 생깁니다. 과목, 시간, 요일은 TOPIA에서 가져오니 확인만 하세요. 체크를 해제하면 그 반은 빠지고, ×2~×5로 여러 장 인쇄할 수 있습니다.'] },
   { sel: '.print-mode',
     en: ['Only need a few tags?', 'Switch to Reprint some students and tick just the ones who need a new tag. When you import a class again, new students are flagged for you.'],
     ko: ['몇 장만 필요할 때', '일부 학생만 다시 인쇄로 바꾸고 새 이름표가 필요한 학생만 체크하세요. 반 명단을 다시 가져오면 새 학생이 자동으로 표시됩니다.'] },
