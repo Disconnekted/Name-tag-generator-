@@ -1,6 +1,6 @@
 # Name Tag Generator: handover
 
-*Written 5 November 2026 so someone else can look after the tool. Last updated 12 November 2026.*
+*Written 5 November 2026 so someone else can look after the tool. Last updated 16 November 2026.*
 **The Name Tag Generator was made by Joseph McLaren.** His credit ("by / Made by Joseph McLaren") appears in the
 header, footer, the "Who's making name tags?" screen, the bottom of every printed page, the Copy students box
 and the page's author tag. Keep it there. There is deliberately **no** copyright or "All rights reserved" line.
@@ -26,7 +26,8 @@ Goal from the start: **original, intuitive, and usable by anyone.**
 
 ## 2. Versions and links
 
-There is one tool in four versions. All of them run from the same code.
+There is one tool in four versions. All of them run from the same code. (A fifth copy lives in the Grade Prep
+Station. It is the same `index.html` with the Class Prep code added at the end; see "The Grade Prep Station copy" below.)
 
 | Version | Where | Who it's for | Where classes are saved |
 |---|---|---|---|
@@ -42,6 +43,27 @@ There is one tool in four versions. All of them run from the same code.
   - on claude.ai the tool always uses claude.ai's own database and never the Google Sheet;
   - the **💻 Get the desktop app** button only appears when the tool is opened as a file, and explains how to
     install the website version instead.
+
+### The Grade Prep Station copy (latest index.html + Class Prep code)
+
+The owner also runs the tool inside the **Grade Prep Station** bundle (`Class Tools\name-tags.html` in the downloaded
+folder, also on https://disconnekted.github.io/Class-tools/name-tags.html). It is looked after by a different
+Claude project ("Class tools") and is opened from the Class Prep page as `name-tags.html?from=prep&ret=<Prep file name>`.
+
+- Since 16 Nov 2026 it follows the **current `index.html`** (brought up to date at commit b221399, PR #20), so it has
+  every feature: sticker sheets, ×1–×5 copies, clicking names to change them, Ctrl+V anywhere, the duplicate-teacher fix.
+- How it is made: take `index.html`, delete the `website-only` block (like the offline file), then add the
+  **Class Prep code** right after the last `load();` line at the bottom of the script. That code only runs with
+  `?from=prep` and:
+  - shows a **← Back to Class Prep** button that returns to the Prep page that opened it (its file name comes in `ret=`);
+  - puts the class list handed over from Class Prep (`prep.tagsHandoff` in the browser) in by itself once a teacher
+    is signed in and the tour is closed;
+  - after printing, shows "Name tags printed, going back to Class Prep…" and goes back;
+  - hides **💻 Get the desktop app** (it doesn't apply inside the downloaded folder).
+- **When `index.html` changes,** the Class tools project redoes these steps (its notes have the recipe). Opened
+  without `?from=prep`, the copy behaves exactly like the offline file.
+- Don't paste `index.html` over it without adding the Class Prep code back, or the Back button and the automatic
+  class list disappear.
 
 ### Files in the repository
 
@@ -63,8 +85,9 @@ There is one tool in four versions. All of them run from the same code.
 2. **Get students from TOPIA.** Once, drag the red **Copy students** button to the bookmarks bar (the tool's
    Step 2 shows only this one instruction; the rest is explained by the bookmark's own red box and the tour).
    On the day's class list on the TOPIA attendance page, click that bookmark, then **Copy for name tags**, then
-   press Ctrl+V anywhere in the tool (a document-level paste listener; other boxes paste normally). Pasting two days' lists builds the days (for example Mon / Wed).
-   How the bookmark reads TOPIA is in section 7.
+   press Ctrl+V anywhere in the tool (a document-level paste listener; other boxes paste normally, and it is
+   ignored on the "Who's making name tags?" screen and during the tour). Pasting two days' lists builds the days (for example Mon / Wed).
+   How the bookmark reads TOPIA is in section 8.
 3. **Check each class:** choose the subject, click Mon / Wed or Tues / Thurs, set copies (×1 to ×5).
    Click any student's name to change it (Enter to save, Esc to cancel).
    A class time is optional (the "Time" box next to Subject); when filled in it prints before the
@@ -131,9 +154,15 @@ These were all decided by the project owner. Please don't undo them without aski
 - **Reprint some students:** tick individual students, ×1 to ×5 each, packed onto as few pages as possible.
 
 ### The screen
+- Labels and hints are short; extra explanation goes in a tooltip (hover). Each thing is explained once (for
+  example, the privacy / sign-out explanation is only the tooltip on **Switch**). Step 3's hints only show once
+  there are classes. Reprint mode hides what doesn't apply there (the copies select, the duplicate name chips).
+  Wording is natural ("Printing both classes", "Reprint the new student", "Imported 1 student"). All from the
+  clean-up on 15 Nov 2026 (PR #19).
 - Header (with Print) stays visible while scrolling. **Undo / Redo** buttons (Ctrl+Z, Ctrl+Y) match the other
   outline header buttons.
-- Dark mode for the screen only (moon / sun icon). Printing is never dark.
+- Dark mode for the screen only (moon / sun icon). Printing is never dark. Everything on screen must stay
+  readable in dark mode (no white boxes or fixed colours; name chips and the sign-in heading were fixed for this).
 - The preview shows exactly what prints and follows the class being edited.
 - Teacher profiles; the same tab stays signed in after a reload; auto sign-out after 30 idle minutes.
 
@@ -163,8 +192,11 @@ Teachers don't need a Google account; they type the **school password** once on 
   without internet.
 - One teacher name = one row. If the same name ever appears twice (ignoring capitals and spaces), the tool joins
   them by itself: it keeps the row used last, adds the other row's classes that it doesn't have (by class name),
-  and deletes the other row. Older copies could make a second row when **Start** was clicked again while the
-  first save was still on its way; that is blocked now.
+  and deletes the other row (`mergeDuplicates` in `index.html`). A teacher who is signed in as one of the two is
+  joined once they switch, and sees "Your name was listed twice, so the two were joined into one. Pick your name
+  again." Older copies could make a second row when **Start** was clicked again while the first save was still
+  on its way (this is how Emma and Zuri got listed twice); Start now ignores a second click while saving
+  (PR #20, 16 Nov 2026).
 - The password is checked by the script in the sheet (`PASSWORD` at the top of `google-apps-script.js`).
   **The real password is not in the repository or in this document.** Ask the project owner.
 - **Changing the password:** edit line 5 in Apps Script, save, then Deploy → Manage deployments → ✎ →
@@ -186,6 +218,7 @@ top (from `<!-- website-only` to `<!-- /website-only -->`). That same file is wh
 | Website + desktop app | Change `index.html` on a branch, open a pull request, merge into `main`. GitHub Pages updates within a few minutes; the desktop app picks it up the next time it opens online. |
 | Offline file | Replace `name-tags/name-tag-generator.html` in the project files. Send the new file to anyone who keeps a copy. |
 | claude.ai version | Republish the offline file to the **same** artifact URL with the capabilities `db` and `downloads`, so the link and saved classes stay. |
+| Grade Prep Station copy | Made from `index.html` plus the Class Prep code (see section 2). The Class tools project rebuilds it and puts it in the Grade Prep Station zip and on the Class-tools site. |
 | Copy students bookmark | Teachers who already dragged it keep the old version until they drag the new button onto their bookmarks bar again. Only needed when the bookmark's code changes. |
 
 Things to know when changing the code:
@@ -200,7 +233,20 @@ Things to know when changing the code:
 
 ---
 
-## 7. Open and unfinished items
+## 7. How the owner likes changes made
+
+- **Small things get fixed without asking**, in the same change, and listed afterwards: duplicates (the same
+  button, setting or explanation twice), wrong or misleading labels, awkward grammar, long or obvious hints
+  (move the detail into a tooltip), dark-mode problems, inconsistent buttons, spacing or fonts.
+- **Bigger changes are suggested first** (layout, flow, new or removed features). Never remove a feature the
+  owner uses.
+- Keep clicks and typing to a minimum. The tool must work for teachers who aren't confident with computers.
+- Changes go to the website through a pull request; the owner usually says "merge it" when they want it live.
+  Update the offline file, the claude.ai version and this document at the same time.
+
+---
+
+## 8. Open and unfinished items
 
 - **The Google Sheet saving has not been tested end to end by the developer**, because the development
   environment couldn't reach Google. The owner deployed the script and the URL is live in the tool.
@@ -212,6 +258,14 @@ Things to know when changing the code:
 - Ideas offered but not chosen yet: a pre-print check (missing English names, duplicates), a recently-deleted bin,
   sorting / tidying names, blank write-in tags, desk tent cards, a backup file, and a Chrome extension instead of
   the bookmark.
+- The Grade Prep Station copy is up to date as of 16 Nov 2026 (see section 2). It needs redoing after each change to
+  `index.html`.
+- **TOPIA Helper:** the Class tools project now has one **TOPIA Helper** bookmark
+  (https://disconnekted.github.io/Class-tools/topia-helper.html) whose menu includes **Copy students** (same
+  `#TOPIA-NAMETAGS` text as this tool's bookmark) and the **Online homework** button, which is moving into it. Class Prep
+  points teachers to that one bookmark. This tool's own red Copy students bookmark still works.
+- Suggested and waiting for an answer: show **Days** as just the two buttons (Mon / Wed, Tues / Thurs).
+- Pull request #11 (an older handover draft) is still open on GitHub but out of date; it can be closed.
 - If TOPIA changes, the Copy students bookmark (`copyStudentsBookmarklet` in `index.html`) is the part most
   likely to break. It first reads every class at once from TOPIA's API
   (`front-api.topiaenglishzone.co.kr/v1/t/class/attendance?searchDate=` for the classes,
@@ -222,7 +276,7 @@ Things to know when changing the code:
 
 ---
 
-## 8. History in short
+## 9. History in short
 
 | Date | Change |
 |---|---|
@@ -236,7 +290,8 @@ Things to know when changing the code:
 | 9 Nov 2026 | Time on/off button; Copy students reads all classes at once via TOPIA's API (PR #14) |
 | 11 Nov 2026 | Step 2 shows only the bookmark instruction (PR #15) |
 | 12 Nov 2026 | Clean-up: removed leftover code and text from removed features; one source file for all versions |
-| 13 Nov 2026 | Up to ×5 copies; AnyLabel sticker sheets (V3410, V3330, V3240); student names can be changed |
-| 16 Nov 2026 | A teacher listed twice is joined into one; Start can't add the same name twice |
+| 13 Nov 2026 | Up to ×5 copies; AnyLabel sticker sheets (V3410, V3330, V3240; V3410 lined up with a real sheet, PRs #17–#18); student names can be changed (PR #16) |
+| 15 Nov 2026 | Clean-up: shorter labels with tooltips, no repeated explanations, dark-mode fixes; Ctrl+V anywhere imports students (PR #19) |
+| 16 Nov 2026 | A teacher listed twice is joined into one; Start can't add the same name twice (PR #20); Grade Prep Station copy brought up to the current `index.html` with its Class Prep code added at the end; Online homework moving into the TOPIA Helper menu; this handover updated |
 
 The pull requests on GitHub have the details of each change.
