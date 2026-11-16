@@ -161,6 +161,10 @@ Teachers don't need a Google account; they type the **school password** once on 
   (long ones split over several cells). Don't edit the saved-classes cells by hand.
 - The tool checks for changes every 30 seconds while it's open, and keeps a copy in the browser so it still opens
   without internet.
+- One teacher name = one row. If the same name ever appears twice (ignoring capitals and spaces), the tool joins
+  them by itself: it keeps the row used last, adds the other row's classes that it doesn't have (by class name),
+  and deletes the other row. Older copies could make a second row when **Start** was clicked again while the
+  first save was still on its way; that is blocked now.
 - The password is checked by the script in the sheet (`PASSWORD` at the top of `google-apps-script.js`).
   **The real password is not in the repository or in this document.** Ask the project owner.
 - **Changing the password:** edit line 5 in Apps Script, save, then Deploy → Manage deployments → ✎ →
@@ -233,5 +237,6 @@ Things to know when changing the code:
 | 11 Nov 2026 | Step 2 shows only the bookmark instruction (PR #15) |
 | 12 Nov 2026 | Clean-up: removed leftover code and text from removed features; one source file for all versions |
 | 13 Nov 2026 | Up to ×5 copies; AnyLabel sticker sheets (V3410, V3330, V3240); student names can be changed |
+| 16 Nov 2026 | A teacher listed twice is joined into one; Start can't add the same name twice |
 
 The pull requests on GitHub have the details of each change.

@@ -728,9 +728,13 @@ function startCloud(db) {
     snap.docs.forEach(d => { cloudDocs[d.id] = d.data(); });
     profiles = snap.docs.map(d => ({ id: d.id, name: clean(String(cloudDocs[d.id].name || '')) })).filter(p => p.name)
       .sort((a, b) => a.name.localeCompare(b.name));
+    mergeDuplicates();
     if (!cloudReady) { cloudReady = true; resumeSession(); return; }
     if (currentId && !cloudDocs[currentId]) {
-      currentId = null; signOut(L('Your name was removed on another computer.', '다른 컴퓨터에서 이 선생님이 삭제되었습니다.'));
+      const was = (currentProfile() || {}).name, joined = was && profiles.some(p => sameName(p.name, was));
+      currentId = null;
+      signOut(joined ? L('Your name was listed twice, so the two were joined into one. Pick your name again.', '이름이 두 번 있어서 하나로 합쳤습니다. 이름을 다시 고르세요.')
+        : L('Your name was removed on another computer.', '다른 컴퓨터에서 이 선생님이 삭제되었습니다.'));
       return;
     }
     // The signed-in teacher's classes were changed somewhere else (another computer or tab).
@@ -751,6 +755,36 @@ function startCloud(db) {
     if (!cloudReady) { cloudProblem = code === 'setup' ? 'setup' : 'offline'; renderWho(); return; }
     setSync('error');
   });
+}
+
+/* One teacher listed twice (the same name, e.g. Start was clicked again while the first save was still
+   on its way online): keep the entry used last, add the other's classes that it doesn't have (matched
+   by class name), then remove the other. A teacher who is signed in is joined once they switch. */
+const sameName = (a, b) => clean(a).toLowerCase() === clean(b).toLowerCase();
+let merging = false;
+async function mergeDuplicates() {
+  if (merging || !cloud || syncState === 'readonly') return;
+  const groups = {};
+  profiles.forEach(p => { const k = clean(p.name).toLowerCase(); (groups[k] = groups[k] || []).push(p.id); });
+  const dupes = Object.values(groups).filter(ids => ids.length > 1 && !ids.includes(currentId) && ids.every(id => cloudDocs[id]));
+  if (!dupes.length) return;
+  merging = true;
+  try {
+    for (const ids of dupes) {
+      const used = id => cloudDocs[id].updated || 0, count = id => ((cloudDocs[id].state || {}).classes || []).length;
+      ids.sort((a, b) => used(b) - used(a) || count(b) - count(a) || (a < b ? -1 : 1));
+      const [keep, ...rest] = ids, keepDoc = cloudDocs[keep];
+      const st = JSON.parse(JSON.stringify(keepDoc.state || {}));
+      if (!Array.isArray(st.classes)) st.classes = [];
+      rest.forEach(id => ((cloudDocs[id].state || {}).classes || []).forEach(c => {
+        const json = JSON.stringify(c);
+        if (c.name ? !st.classes.some(o => o.name === c.name) : !st.classes.some(o => JSON.stringify(o) === json)) st.classes.push(JSON.parse(json));
+      }));
+      await cloud.doc('teachers/' + keep).set({ name: keepDoc.name, state: st, updated: Date.now(), by: TAB_ID });
+      for (const id of rest) { delete cloudQueue[id]; await cloud.doc('teachers/' + id).delete(); }
+    }
+  } catch (e) {} // tried again on the next look
+  merging = false;
 }
 
 function openProfile(id) {
@@ -854,10 +888,11 @@ function showWho(message) {
   document.getElementById('who').hidden = false;
   document.body.classList.add('who-open');
   renderWho(message);
+  mergeDuplicates(); // a teacher listed twice who was signed in a moment ago
 }
 function hideWho() { document.getElementById('who').hidden = true; document.body.classList.remove('who-open'); }
 // Teachers saved in this browser who aren't online yet.
-const localOnly = () => cloud ? localProfiles.filter(p => readLocal(p.id) && !profiles.some(o => o.name.toLowerCase() === p.name.toLowerCase())) : [];
+const localOnly = () => cloud ? localProfiles.filter(p => readLocal(p.id) && !profiles.some(o => sameName(o.name, p.name))) : [];
 function renderWho(message) {
   const box = document.getElementById('who');
   const top = `<div class="who-top"><h2>${L("Who's making name tags?", '누가 이름표를 만드나요?')}</h2>
@@ -910,6 +945,7 @@ function renderWho(message) {
     <p class="copyright">Made by Joseph McLaren</p></div>`;
   if (!profiles.length) document.getElementById('new-name').focus();
 }
+let adding = false;
 const whoErr = t => { const e = document.getElementById('who-err'); if (e) e.textContent = t; };
 async function removeProfile(id) {
   delete cloudQueue[id];
@@ -954,15 +990,18 @@ document.getElementById('who').addEventListener('submit', async e => {
     if (pw) setPassword(pw); else document.getElementById('pw-box').focus();
     return;
   }
-  if (!cloudReady) return;
+  if (!cloudReady || adding) return;
   const name = clean(document.getElementById('new-name').value);
   if (!name) { whoErr(L('Type your name first.', '먼저 이름을 입력하세요.')); return; }
-  if (profiles.some(p => p.name.toLowerCase() === name.toLowerCase())) { whoErr(L('That name is already here. Pick it from the list above.', '이미 있는 이름입니다. 위 목록에서 고르세요.')); return; }
+  if (profiles.some(p => sameName(p.name, name))) { whoErr(L('That name is already here. Pick it from the list above.', '이미 있는 이름입니다. 위 목록에서 고르세요.')); return; }
   const id = newProfileId();
   if (cloud) {
+    // Saving online takes a moment: a second click on Start meanwhile must not add the name twice.
+    adding = true; whoErr(L('Saving…', '저장 중…'));
     try { await cloud.doc('teachers/' + id).set({ name, state: { teacher: name }, updated: Date.now(), by: TAB_ID }); }
-    catch (err) { whoErr(err && err.code === 'invalid_argument' ? L('This page is view only for you. Ask the owner for edit access.', '이 페이지는 보기 전용입니다. 소유자에게 편집 권한을 요청하세요.')
+    catch (err) { adding = false; whoErr(err && err.code === 'invalid_argument' ? L('This page is view only for you. Ask the owner for edit access.', '이 페이지는 보기 전용입니다. 소유자에게 편집 권한을 요청하세요.')
       : L('Could not save online. Check the internet and try again.', '온라인에 저장하지 못했습니다. 인터넷을 확인하고 다시 해 보세요.')); return; }
+    adding = false;
     if (!profiles.some(p => p.id === id)) { profiles.push({ id, name }); cloudDocs[id] = { name, state: { teacher: name } }; }
   } else {
     profiles.push({ id, name });
