@@ -64,6 +64,11 @@ Claude project ("Class tools") and is opened from the Class Prep page as `name-t
   without `?from=prep`, the copy behaves exactly like the offline file.
 - Don't paste `index.html` over it without adding the Class Prep code back, or the Back button and the automatic
   class list disappear.
+- **Since 23 Nov 2026 the Class Prep code is also in `index.html` itself** (right after the last `load();`), so Class
+  Prep can open this website directly: `…/Name-tag-generator-/?from=prep#prep=<class list>` in a new tab. There the
+  class list comes in from the link, **← Back to Class Prep** (and the automatic return after printing) closes the tab
+  and tells the Prep page the tags are done (`postMessage({type:'prep:tagsDone'})`). Without `?from=prep` nothing
+  of it runs, so teachers who open the site normally see no change.
 
 ### Files in the repository
 
