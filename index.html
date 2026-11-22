@@ -2257,6 +2257,55 @@ document.addEventListener('keydown', e => {
 /* ---------- start ---------- */
 setLayout();
 load(); // signs the same teacher back in after a reload, otherwise asks who's using the tool
+
+/* Opened from the Class Prep Station (?from=prep, a teacher-prep page in the "Class tools" project):
+   the class list handed over comes in by itself, a "Back to Class Prep" button shows, and after printing it goes back.
+   Works both in the Grade Prep Station's own copy and on this website (Prep opens the site in a new tab and the
+   list comes in the link as #prep=...; going back closes this tab). Opened on its own, nothing here runs. */
+(function () {
+  if (new URLSearchParams(location.search).get('from') !== 'prep') return;
+  // signing out first keeps this teacher's classes saved but hidden from the next teacher
+  // go back to the exact Prep page that opened this one (its file name can differ: class-prep.html, index.html, a renamed copy)
+  const prepUrl = (() => { try { const ret = new URLSearchParams(location.search).get('ret');
+      if (ret && /^[^\/\\:?#]+\.html?$/i.test(ret)) return encodeURIComponent(ret) + '?back=tags'; } catch (e) {}
+    try { const r = document.referrer && new URL(document.referrer);
+      if (r && r.origin === location.origin && !/name-tags/i.test(r.pathname)) { r.search = '?back=tags'; r.hash = ''; return r.href; } } catch (e) {}
+    return (location.protocol === 'file:' || /github\.io$/.test(location.hostname)) ? 'class-prep.html?back=tags' : 'index.html?back=tags'; })();
+  try { if (new URLSearchParams(location.search).get('ret') || !sessionStorage.getItem('prepBackUrl')) sessionStorage.setItem('prepBackUrl', prepUrl); } catch (e) {}
+  // opened in a new tab by Class Prep (e.g. on this website): tell it the tags are done and close this tab;
+  // otherwise go back to the Prep page next to this file
+  const opened = (() => { try { return !!window.opener && !window.opener.closed; } catch (e) { return false; } })();
+  const sameSite = location.protocol === 'file:' || /Class-tools/i.test(location.pathname);
+  const back = () => { try { if (currentId) signOut(); } catch (e) {}
+    if (opened) { try { window.opener.postMessage({ type: 'prep:tagsDone' }, '*'); } catch (e) {} window.close(); setTimeout(() => { if (history.length > 1) history.back(); }, 300); return; }
+    if (!sameSite) { if (history.length > 1) history.back(); return; }
+    let u = prepUrl; try { u = sessionStorage.getItem('prepBackUrl') || prepUrl; } catch (e) {} location.href = u; };
+  const bar = document.createElement('a');
+  bar.href = prepUrl; bar.className = 'prepback'; bar.addEventListener('click', e => { e.preventDefault(); back(); }); bar.textContent = '← Back to Class Prep';
+  const st = document.createElement('style');
+  st.textContent = 'body{padding-bottom:72px}a.prepback.prepback,a.prepback.prepback:visited,a.prepback.prepback:hover{color:#fff!important}.prepback{position:fixed;left:16px;bottom:16px;z-index:8550;background:#7a1c0c;color:#fff;font:600 15px/1 Arial,sans-serif;padding:12px 16px;border-radius:999px;text-decoration:none;box-shadow:0 2px 8px rgba(0,0,0,.2)}@media print{.prepback{display:none}}';
+  document.head.appendChild(st); document.body.appendChild(bar);
+  // inside the Grade Prep Station the desktop-app offer doesn't apply (this copy lives in the downloaded folder)
+  const appBtn = document.getElementById('app-btn'); if (appBtn) { appBtn.hidden = true; st.textContent += '#app-btn{display:none!important}'; }
+  // the class list from Class Prep goes in by itself once a teacher is signed in (and any tour is closed)
+  // the list also comes in the link itself (#prep=…), so it works when the browser keeps no storage (incognito, Firefox, Safari)
+  let hashT = null; try { const m = /^#prep=([\s\S]*)$/.exec(location.hash); if (m) { hashT = decodeURIComponent(m[1]); history.replaceState(null, '', location.pathname + location.search); } } catch (e) {}
+  const take = () => { if (hashT) return hashT; try { const h = JSON.parse(localStorage.getItem('prep.tagsHandoff') || 'null'); if (!h || Date.now() - h.at > 30 * 60 * 1000) return null; return h.t; } catch (e) { return null; } };
+  if (take()) { const iv = setInterval(() => {
+    const box = document.getElementById('paste'); if (!currentId || tourAt >= 0 || !box) return;
+    clearInterval(iv); const t = take(); hashT = null; try { localStorage.removeItem('prep.tagsHandoff'); } catch (e) {} if (!t) return;
+    const dt = new DataTransfer(); dt.setData('text/plain', t);
+    box.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+  }, 400); setTimeout(() => clearInterval(iv), 30 * 60 * 1000); }
+  let timer = null;
+  window.addEventListener('afterprint', () => {
+    setTimeout(() => {
+      showNotice(L('<b>Name tags printed.</b> Going back to Class Prep for the next step…', '<b>이름표를 인쇄했습니다.</b> 다음 단계를 위해 Class Prep으로 돌아갑니다…'),
+        [[L('Back to Class Prep now', '지금 돌아가기'), back], [L('Stay here', '여기 머물기'), () => { clearTimeout(timer); hideNotice(); }]], 'print');
+      timer = setTimeout(back, 4000);
+    }, 400);
+  });
+})();
 </script>
 </body>
 </html>
