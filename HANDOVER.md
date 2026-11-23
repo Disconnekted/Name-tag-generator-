@@ -149,7 +149,7 @@ These were all decided by the project owner. Please don't undo them without aski
   58 original drawings in `ANIMALS` in `index.html` (common animals, dinosaurs, dragon, unicorn, phoenix, kumiho);
   each lists its English and Korean names. A word that isn't drawn gets the nearest spelling, otherwise always the
   same stand-in for that word (the tooltip on the little picture says so). 🎲 picks one no other teacher has.
-  The "Who's making name tags?" screen shows each teacher's animal next to their name. To add an animal, add an
+  The "Who's making name tags?" screen shows a teacher's animal next to their name only if they chose one. To add an animal, add an
   entry to `ANIMALS` (100×100 drawing, names in both languages). No AI or internet is needed.
 - Subject, class and days must never be cut off with "…": the text shrinks, then wraps.
 - **Colours follow the subject:** Debate red, Grammar yellow (the owner's choice); Phonics orange, Speaking blue,

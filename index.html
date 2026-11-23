@@ -942,7 +942,7 @@ function renderWho(message) {
     return;
   }
   const list = profiles.length
-    ? `<div class="who-list">${profiles.map(p => `<div class="who-item"><button class="who-pick" data-act="pick" data-id="${p.id}">${animalSVG(findAnimal(((cloud ? (cloudDocs[p.id] || {}).state : readLocal(p.id)) || {}).animal).key)}<span>${esc(p.name)}</span></button>` +
+    ? `<div class="who-list">${profiles.map(p => `<div class="who-item"><button class="who-pick" data-act="pick" data-id="${p.id}">${profileAnimalSVG(p)}<span>${esc(p.name)}</span></button>` +
         `<button class="small danger" data-act="del" data-id="${p.id}" title="${L('Remove this teacher', '이 선생님 삭제')}">✕</button></div>`).join('')}</div>`
     : '';
   const moving = localOnly();
@@ -2206,6 +2206,11 @@ function animalSymbol(key) {
   return id;
 }
 const animalSVG = (key, cls) => `<svg${cls ? ` class="${cls}"` : ''} viewBox="0 0 100 100" aria-hidden="true"><use href="#${animalSymbol(key)}"/></svg>`;
+// On the sign-in screen: the teacher's animal, only if they chose one (no squirrel for everyone).
+function profileAnimalSVG(p) {
+  const typed = clean((((cloud ? (cloudDocs[p.id] || {}).state : readLocal(p.id)) || {}).animal) || '');
+  return typed ? animalSVG(findAnimal(typed).key) : '';
+}
 const animalName = key => isKo() ? ANIMALS[key][1][0] : ANIMALS[key][0][0];
 // Which animals the other teachers on this computer / online have: key -> [names]
 function animalsOfOthers() {
