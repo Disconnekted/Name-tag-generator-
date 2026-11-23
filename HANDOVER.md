@@ -1,6 +1,6 @@
 # Name Tag Generator: handover
 
-*Written 5 November 2026 so someone else can look after the tool. Last updated 16 November 2026.*
+*Written 5 November 2026 so someone else can look after the tool. Last updated 23 November 2026.*
 **The Name Tag Generator was made by Joseph McLaren.** His credit ("by / Made by Joseph McLaren") appears in the
 header, footer, the "Who's making name tags?" screen, the bottom of every printed page, the Copy students box
 and the page's author tag. Keep it there. There is deliberately **no** copyright or "All rights reserved" line.
@@ -142,7 +142,15 @@ These were all decided by the project owner. Please don't undo them without aski
   - One class per page (optional). Only this tag design (a Large size was tried and removed).
 - Names shown as **English | Korean** (default), **Korean | English**, or one of them. **Student names are never red.**
 - Four styles: **Classic** (the original maroon), **Modern**, **Cute** (yellow; corners must stay square for
-  cutting), **TOPIA** (inspired by the school website). The squirrel watermark is an original drawing.
+  cutting), **TOPIA** (inspired by the school website).
+- **Each teacher picks their own watermark animal** (asked for 23 Nov 2026): the box next to *Watermark* takes any
+  animal in English or Korean ("fox", "여우", "baby tiger", "elefant" all work). It is saved with that teacher's
+  classes (`state.animal`, so it follows them through the Google Sheet too); empty means the original squirrel.
+  58 original drawings in `ANIMALS` in `index.html` (common animals, dinosaurs, dragon, unicorn, phoenix, kumiho);
+  each lists its English and Korean names. A word that isn't drawn gets the nearest spelling, otherwise always the
+  same stand-in for that word (the tooltip on the little picture says so). 🎲 picks one no other teacher has.
+  The "Who's making name tags?" screen shows each teacher's animal next to their name. To add an animal, add an
+  entry to `ANIMALS` (100×100 drawing, names in both languages). No AI or internet is needed.
 - Subject, class and days must never be cut off with "…": the text shrinks, then wraps.
 - **Colours follow the subject:** Debate red, Grammar yellow (the owner's choice); Phonics orange, Speaking blue,
   Writing green, Integrated purple, Language Arts teal, TOEFL Reading navy.
@@ -298,5 +306,6 @@ Things to know when changing the code:
 | 13 Nov 2026 | Up to ×5 copies; AnyLabel sticker sheets (V3410, V3330, V3240; V3410 lined up with a real sheet, PRs #17–#18); student names can be changed (PR #16) |
 | 15 Nov 2026 | Clean-up: shorter labels with tooltips, no repeated explanations, dark-mode fixes; Ctrl+V anywhere imports students (PR #19) |
 | 16 Nov 2026 | A teacher listed twice is joined into one; Start can't add the same name twice (PR #20); Grade Prep Station copy brought up to the current `index.html` with its Class Prep code added at the end; Online homework moving into the TOPIA Helper menu; this handover updated |
+| 23 Nov 2026 | Each teacher chooses their own watermark animal (58 drawings, English or Korean names) |
 
 The pull requests on GitHub have the details of each change.
