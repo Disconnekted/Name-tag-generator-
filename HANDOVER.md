@@ -98,7 +98,8 @@ Claude project ("Class tools") and is opened from the Class Prep page as `name-t
    A class time is optional (the "Time" box next to Subject); when filled in it prints before the
    days, e.g. "4:00 Mon / Wed". Left blank, the tag shows just the days.
    Copy students fills it in from TOPIA's Time column (start time, "16:00~16:50" becomes "4:00"),
-   unless the teacher already typed a time.
+   unless the teacher already typed a time. TOPIA lists some classes 5 minutes early, so a start time
+   ending in :55 shows as the next hour ("17:55" becomes "6:00"; a saved "5:55" also shows as "6:00").
    The **Time** button next to Tick all / Untick all turns class times on or off for every tag (off hides the
    Time boxes; the times stay saved).
    A missing student can be typed into the class's **Add a student** box.
@@ -307,5 +308,6 @@ Things to know when changing the code:
 | 15 Nov 2026 | Clean-up: shorter labels with tooltips, no repeated explanations, dark-mode fixes; Ctrl+V anywhere imports students (PR #19) |
 | 16 Nov 2026 | A teacher listed twice is joined into one; Start can't add the same name twice (PR #20); Grade Prep Station copy brought up to the current `index.html` with its Class Prep code added at the end; Online homework moving into the TOPIA Helper menu; this handover updated |
 | 23 Nov 2026 | Each teacher chooses their own watermark animal (58 drawings, English or Korean names) |
+| 27 Nov 2026 | Class times ending in :55 show as the next hour (5:55 becomes 6:00) (PR #26) |
 
 The pull requests on GitHub have the details of each change.
