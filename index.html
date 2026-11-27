@@ -808,7 +808,7 @@ function openProfile(id) {
   if (cloud && cloudDocs[id]) lastWritten[id] = JSON.stringify(cloudDocs[id].state);
   state = Object.assign(freshState(), d, { lang: state.lang, theme: state.theme });
   if (!Array.isArray(state.classes)) state.classes = [];
-  nextId = 1; state.classes.forEach(c => { c.id = nextId++; c.days = pairDays(c.days); });
+  nextId = 1; state.classes.forEach(c => { c.id = nextId++; c.days = pairDays(c.days); c.time = onTheHour(c.time); });
   currentId = id; lastActive = Date.now(); activeId = null; resetUndo();
   hideWho(); hideNotice(); syncUI(); save(); setSync(syncState === 'readonly' ? 'readonly' : 'ok');
   if (!state.toured && !state.classes.length) setTimeout(tourStart, 400); // a teacher's first visit
@@ -1481,7 +1481,7 @@ function applyGroups(groups) {
     }
     if (subjects.has(raw) && !c.subject) c.subject = clean(subjects.get(raw));
     // The class time from TOPIA's Time column fills an empty Time box (a time typed by the teacher is kept).
-    if (times.has(raw) && !clean(c.time)) c.time = classTime(times.get(raw));
+    if (times.has(raw) && (!clean(c.time) || c.time === classTime(times.get(raw), true))) c.time = classTime(times.get(raw));
     // Each pasted day adds its weekday, so Monday + Wednesday pastes give "Mon / Wed".
     if (groups.weekday !== undefined && (!c.days || c.daysAuto)) {
       c.weekdays = [...new Set([...(c.weekdays || []), groups.weekday])].sort((a, b) => (a || 7) - (b || 7));
@@ -1505,11 +1505,16 @@ function applyGroups(groups) {
 }
 
 // "16:00~16:50" or "4:00 PM - 4:50 PM" -> "4:00": the start time only, afternoon hours written the short way.
-function classTime(t) {
+// TOPIA lists some classes 5 minutes early (17:55), so :55 shows as the next hour (6:00). raw = without that.
+function classTime(t, raw) {
   const m = String(t || '').match(/(\d{1,2})\s*[:：.]\s*(\d{2})/);
   if (!m) return clean(t);
-  const h = +m[1];
-  return `${h > 12 ? h - 12 : h}:${m[2]}`;
+  const h = +m[1], time = `${h > 12 ? h - 12 : h}:${m[2]}`;
+  return raw ? time : onTheHour(time);
+}
+function onTheHour(t) {
+  const m = String(t || '').match(/^(\d{1,2}):55$/);
+  return m ? `${+m[1] % 12 + 1}:00` : t;
 }
 
 /* ---------- class editor ---------- */
